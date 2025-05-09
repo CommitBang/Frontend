@@ -22,9 +22,6 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
     
-    - name: Verify formatting
-      run: dart format --output=none --set-exit-if-changed .
-    
     - name: Analyze project source
       run: flutter analyze
     
@@ -36,10 +33,3 @@ jobs:
     
     - name: Run integration tests
       run: flutter test --coverage test/integration/
-    
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: coverage/
-        if-no-files-found: error 

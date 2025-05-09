@@ -1,0 +1,45 @@
+name: Flutter Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.29.3'
+        channel: 'stable'
+    
+    - name: Install dependencies
+      run: flutter pub get
+    
+    - name: Verify formatting
+      run: dart format --output=none --set-exit-if-changed .
+    
+    - name: Analyze project source
+      run: flutter analyze
+    
+    - name: Run unit tests
+      run: flutter test --coverage test/unit/
+    
+    - name: Run widget tests
+      run: flutter test --coverage test/widget/
+    
+    - name: Run integration tests
+      run: flutter test --coverage test/integration/
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage/
+        if-no-files-found: error 

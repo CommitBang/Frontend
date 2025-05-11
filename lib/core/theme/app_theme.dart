@@ -8,7 +8,7 @@ class AppTheme {
     useMaterial3: true,
     colorScheme: lightColorScheme,
     textTheme: customTextTheme,
-    scaffoldBackgroundColor: lightColorScheme.background,
+    scaffoldBackgroundColor: lightColorScheme.surface,
     appBarTheme: AppBarTheme(
       backgroundColor: lightColorScheme.surface,
       foregroundColor: lightColorScheme.onSurface,
@@ -25,7 +25,7 @@ class AppTheme {
     useMaterial3: true,
     colorScheme: darkColorScheme,
     textTheme: customTextTheme,
-    scaffoldBackgroundColor: darkColorScheme.background,
+    scaffoldBackgroundColor: darkColorScheme.surface,
     appBarTheme: AppBarTheme(
       backgroundColor: darkColorScheme.surface,
       foregroundColor: darkColorScheme.onSurface,

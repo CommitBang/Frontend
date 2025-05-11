@@ -23,18 +23,28 @@ lib/
 │   │   └── theme_constants.dart
 │   ├── theme/           # 앱 테마
 │   │   ├── app_theme.dart
-│   │   └── color_scheme.dart
+│   │   ├── color_scheme.dart
+│   │   └── text_theme.dart 
 │   └── utils/           # 유틸리티 함수
 │       ├── date_utils.dart
 │       └── string_utils.dart
 ├── features/            # 기능별 모듈
-│   ├── feature_name/           # 기능 모듈
-│   │   ├── screens/    # 화면
-│   │   ├── widgets/    # 위젯
-│   │   └── models/     # 데이터 모델
+│   └── snapfig/           # 기능 모듈
+│       ├── screens/   # 화면
+│       │   └── pdf_viewer_screen.dart
+│       ├── widgets/    # 위젯
+│       │   ├── figure_list_panel.dart
+│       │   ├── ocr_overlay_painter.dart
+│       │   └── pdf_page_viewer.dart
+│       └── models/     # 데이터 모델
+│           ├── figure_info.dart
+│           └── ocr_text_block.dart
 ├── shared/             # 공유 컴포넌트
 │   ├── widgets/        # 공통 위젯
+│   │   └── document_card.dart
 │   └── services/       # 공통 서비스
+│       ├── ocr_service.dart
+│       └── pdf_service.dart
 └── main.dart           # 앱 진입점
 
 test/                   # 테스트 파일
@@ -45,7 +55,9 @@ test/                   # 테스트 파일
 assets/                # 리소스 파일
 ├── images/           # 이미지
 ├── fonts/            # 폰트
-└── icons/            # 아이콘
+├── icons/            # 아이콘
+└── sample.pdf/       # 데모 실행확인용 pdf
+
 ```
 
 ### 주요 디렉토리 설명

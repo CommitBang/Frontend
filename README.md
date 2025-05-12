@@ -29,7 +29,7 @@ lib/
 │       ├── date_utils.dart
 │       └── string_utils.dart
 ├── features/            # 기능별 모듈
-│   └── snapfig/           # 기능 모듈
+│   └── pdf_viewer/           # 기능 모듈
 │       ├── screens/   # 화면
 │       │   └── pdf_viewer_screen.dart
 │       ├── widgets/    # 위젯

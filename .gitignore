@@ -46,3 +46,9 @@ app.*.map.json
 
 # Coverage related
 coverage/
+
+# iOS Signing
+ios/Runner.xcworkspace/xcshareddata
+ios/Runner.xcworkspace/xcuserdata
+ios/Runner.scodeproj/project.xcworkspace/xcuserdata
+ios/Runner.xcodeproj/xcuserdata

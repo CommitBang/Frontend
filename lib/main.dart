@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
-import 'features/pdf_viewer//screens/pdf_viewer_screen.dart';
+import 'features/pdf_viewer//screens/pdf_viewer_screen.dart'; // 디렉토리 경로 수정
 
 void main() {
   runApp(const SmartPdfApp()); //snapfig로 수정

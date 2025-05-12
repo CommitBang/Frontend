@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
-import 'features/snapfig/screens/pdf_viewer_screen.dart';
+import 'features/pdf_viewer//screens/pdf_viewer_screen.dart';
 
 void main() {
   runApp(const SmartPdfApp()); //snapfig로 수정

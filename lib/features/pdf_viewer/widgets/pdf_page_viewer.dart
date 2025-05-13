@@ -18,7 +18,7 @@ class PdfPageViewer extends StatelessWidget {
       itemBuilder: (context, index) {
         final page = pages[index];
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          padding: const EdgeInsets.symmetric(vertical: 8.0), //padding 값
           child: AspectRatio(
             aspectRatio: page.width / page.height,
             child: PdfPageView(

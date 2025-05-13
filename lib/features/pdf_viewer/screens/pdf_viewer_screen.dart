@@ -33,7 +33,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('PDF 로드 오류: \${snapshot.error}'));
+            return Center(child: Text('PDF 로드 오류: \${snapshot.error}')); //const 사용 고려가능
           } else if (snapshot.hasData) {
             return PdfPageViewer(document: snapshot.data!);
           } else {

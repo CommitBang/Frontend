@@ -39,8 +39,9 @@ lib/
 
 test/                   # 테스트 파일
 ├── unit/              # 단위 테스트
-├── widget/            # 위젯 테스트
-└── integration/       # 통합 테스트
+└── widget/            # 위젯 테스트
+
+integration_test/       # 통합 테스트
 
 assets/                # 리소스 파일
 ├── images/           # 이미지

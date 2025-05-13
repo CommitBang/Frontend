@@ -11,12 +11,12 @@ class PdfPageViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pageCount = document.pages.length;
+    final pages = document.pages;
 
     return ListView.builder(
-      itemCount: pageCount,
+      itemCount: pages.length,
       itemBuilder: (context, index) {
-        final page = document.pages[index];
+        final page = pages[index];
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: AspectRatio(
@@ -31,4 +31,3 @@ class PdfPageViewer extends StatelessWidget {
     );
   }
 }
-

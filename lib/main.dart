@@ -1,9 +1,11 @@
+//main.dart
+
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
-import 'features/pdf_viewer//screens/pdf_viewer_screen.dart'; // 디렉토리 경로 수정
+import 'features/pdf_viewer/screens/pdf_viewer_screen.dart';
 
 void main() {
-  runApp(const SmartPdfApp()); //snapfig로 수정
+  runApp(const SmartPdfApp());
 }
 
 class SmartPdfApp extends StatelessWidget {
@@ -12,12 +14,15 @@ class SmartPdfApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Smart PDF Viewer', // 이름 수정
+      title: 'Smart PDF Viewer',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme, // Light/Dark theme 분리 가능
+      theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      home: const PdfViewerScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const PdfViewerScreen(),
+      },
     );
   }
 }

@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
-import '../../../shared/services/pdf_service.dart';
-import '../widgets/pdf_page_viewer.dart';
+import 'package:pdf_viewer/shared/services/pdf_service.dart';
+import 'package:pdf_viewer/features/pdf_viewer/widgets/pdf_page_viewer.dart';
 
 class PdfViewerScreen extends StatefulWidget {
   const PdfViewerScreen({super.key});

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 /// PDF 문서의 모든 페이지를 스크롤 가능한 뷰로 렌더링하는 위젯
+/// 사용자가 각 페이지를 수직으로 스크롤
+/// 사용자가 핀치 제스쳐로 확대/축소 할 수 있는 뷰어
 class PdfPageViewer extends StatelessWidget {
   final PdfDocument document;
 
@@ -23,11 +25,17 @@ class PdfPageViewer extends StatelessWidget {
         // 상단 정렬 → 페이지 맨 위(여백+컨텐츠 시작 부분)가 항상 화면 맨 위에 위치
         return Align(
           alignment: Alignment.topCenter,
-          child: AspectRatio(
-            aspectRatio: page.width / page.height,
-            child: PdfPageView(
-              document: document,
-              pageNumber: index,
+          child: InteractiveViewer(
+            panEnabled: true,
+            scaleEnabled: true,
+            minScale: 1.0, // 최소 스케일 값
+            maxScale: 4.0, // 최대 스케일 값
+            child: AspectRatio(
+              aspectRatio: page.width / page.height,
+              child: PdfPageView(
+                document: document,
+                pageNumber: index,
+              ),
             ),
           ),
         );

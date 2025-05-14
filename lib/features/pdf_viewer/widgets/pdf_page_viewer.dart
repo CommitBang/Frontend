@@ -7,18 +7,22 @@ import 'package:pdfrx/pdfrx.dart';
 class PdfPageViewer extends StatelessWidget {
   final PdfDocument document;
 
-  const PdfPageViewer({super.key, required this.document});
+  const PdfPageViewer({Key? key, required this.document}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final pages = document.pages;
+    final pageCount = document.pages.length;
 
-    return ListView.builder(
-      itemCount: pages.length,
+    return PageView.builder(
+      scrollDirection: Axis.vertical,
+      controller: PageController(initialPage: 1), //첫 페이지 번호 인덱스 (인덱스를 0으로 설정시 첫 화면이 배경으로 보임)
+      itemCount: pageCount,
       itemBuilder: (context, index) {
-        final page = pages[index];
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0), //padding 값
+        final page = document.pages[index];
+
+        // 상단 정렬 → 페이지 맨 위(여백+컨텐츠 시작 부분)가 항상 화면 맨 위에 위치
+        return Align(
+          alignment: Alignment.topCenter,
           child: AspectRatio(
             aspectRatio: page.width / page.height,
             child: PdfPageView(

@@ -24,6 +24,9 @@ class _PdfPageViewerState extends State<PdfPageViewer> {
   final double _minScale = 1.0;
   final double _maxScale = 4.0;
 
+  bool _fitWidth = false;   // 가로 맞춤 모드
+  bool _fitHeight = false;  // 세로 맞춤 모드
+
   @override
   void initState() {
     super.initState();
@@ -43,11 +46,9 @@ class _PdfPageViewerState extends State<PdfPageViewer> {
 
   /// 확대 버튼 동작: 확대 전 위치 저장 후 스케일 유지
   void _zoomIn() {
-    // 현재 오프셋 저장
     _lastTranslate = _transformationController.value.getTranslation();
     setState(() {
       _currentScale = (_currentScale + 0.5).clamp(_minScale, _maxScale);
-      // 이전 위치에서 스케일 적용
       _transformationController.value = Matrix4.identity()
         ..translate(_lastTranslate.x, _lastTranslate.y)
         ..scale(_currentScale);
@@ -70,6 +71,22 @@ class _PdfPageViewerState extends State<PdfPageViewer> {
     setState(() {
       _transformationController.value = Matrix4.identity()
         ..scale(_currentScale);
+    });
+  }
+
+  /// 가로 맞춤 아이콘 동작: 가로 맞춤 모드 토글
+  void _toggleFitWidth() {
+    setState(() {
+      _fitWidth = true;
+      _fitHeight = false;
+    });
+  }
+
+  /// 세로 맞춤 아이콘 동작: 세로 맞춤 모드 토글
+  void _toggleFitHeight() {
+    setState(() {
+      _fitWidth = false;
+      _fitHeight = true;
     });
   }
 
@@ -100,7 +117,11 @@ class _PdfPageViewerState extends State<PdfPageViewer> {
                     width: constraints.maxWidth,
                     height: constraints.maxHeight,
                     child: FittedBox(
-                      fit: BoxFit.contain,
+                      fit: _fitWidth
+                          ? BoxFit.fitWidth
+                          : _fitHeight
+                          ? BoxFit.fitHeight
+                          : BoxFit.contain,
                       alignment: Alignment.center,
                       child: SizedBox(
                         width: page.width,
@@ -118,7 +139,7 @@ class _PdfPageViewerState extends State<PdfPageViewer> {
             );
           },
         ),
-        // 확대/축소 및 중앙 정렬 버튼
+        // 확대/축소 및 중앙 정렬, 피팅 모드 버튼
         Positioned(
           top: 16,
           right: 16,
@@ -140,6 +161,18 @@ class _PdfPageViewerState extends State<PdfPageViewer> {
                 onPressed: _resetAlignment,
                 mini: true,
                 child: const Icon(Icons.center_focus_strong),
+              ),
+              const SizedBox(height: 8),
+              FloatingActionButton(
+                onPressed: _toggleFitWidth,
+                mini: true,
+                child: const Icon(Icons.swap_horiz),
+              ),
+              const SizedBox(height: 8),
+              FloatingActionButton(
+                onPressed: _toggleFitHeight,
+                mini: true,
+                child: const Icon(Icons.swap_vert),
               ),
             ],
           ),

@@ -68,6 +68,8 @@ PODS:
   - pdf_image_renderer (0.0.1):
     - Flutter
   - PromisesObjC (2.4.0)
+  - ultralytics_yolo (0.0.4):
+    - Flutter
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
@@ -77,6 +79,7 @@ DEPENDENCIES:
   - GoogleMLKit/TextRecognitionKorean (~> 7.0.0)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - pdf_image_renderer (from `.symlinks/plugins/pdf_image_renderer/ios`)
+  - ultralytics_yolo (from `.symlinks/plugins/ultralytics_yolo/ios`)
 
 SPEC REPOS:
   trunk:
@@ -105,6 +108,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/integration_test/ios"
   pdf_image_renderer:
     :path: ".symlinks/plugins/pdf_image_renderer/ios"
+  ultralytics_yolo:
+    :path: ".symlinks/plugins/ultralytics_yolo/ios"
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
@@ -125,6 +130,7 @@ SPEC CHECKSUMS:
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   pdf_image_renderer: 59b426e235007c4958862ef401c6dfdef3622e6a
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
+  ultralytics_yolo: 650ea1417a5b3ef9b1acc55e6edef5385018d3b5
 
 PODFILE CHECKSUM: 1a2887e65220bee0fcf796726a975bb0418903ec
 

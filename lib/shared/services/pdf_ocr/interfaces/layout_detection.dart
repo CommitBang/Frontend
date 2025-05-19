@@ -1,5 +1,5 @@
 import 'package:flutter/services.dart';
-
+import 'package:ultralytics_yolo/yolo.dart';
 import './layout_model.dart';
 
 class LayoutDetectionError extends Error {
@@ -28,6 +28,8 @@ class LayoutDetectionResult {
 
 /// 레이아웃 인식 인터페이스
 abstract class LayoutDetectionProcess {
+  static YOLO? yolo;
+
   /// 이미지 비트맵
   final Uint8List imgBitmap;
 
@@ -38,7 +40,4 @@ abstract class LayoutDetectionProcess {
 
   /// 레이아웃 인식
   Future<LayoutDetectionResult> detect();
-
-  /// 처리 중단
-  void cancel();
 }

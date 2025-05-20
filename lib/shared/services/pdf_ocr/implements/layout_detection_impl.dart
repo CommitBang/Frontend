@@ -1,10 +1,8 @@
 import 'dart:io';
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:snapfig/shared/services/pdf_ocr/interfaces/layout_model.dart';
 import 'package:ultralytics_yolo/yolo.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart';
 import 'package:image/image.dart';
 import '../interfaces/layout_detection.dart';
 
@@ -12,15 +10,14 @@ class LayoutDetectionProcessImpl extends LayoutDetectionProcess {
   final _logger = Logger('LayoutDetectionProcessImpl');
 
   // 플랫폼별 모델 파일명 상수화
+  static const String _modelName = 'doclaynet';
   static const String _androidAssetModel =
       'assets/models/yolov8n-doclaynet_float32.tflite';
-  static const String _androidInternalModel = 'yolov8n-doclaynet.tflite';
   static const String _iosAssetModel =
-      'assets/models/yolov8n-doclaynet.mlmodel';
-  static const String _iosInternalModelName = 'yolov8n-doclaynet.mlmodel';
+      'assets/models/yolov11n-doclaynet.mlmodel';
 
   // 레이아웃 모델에 들어갈 이미지 넓이
-  static const double _layoutWidth = 1024;
+  static const double _layoutWidth = 640;
 
   LayoutDetectionProcessImpl({
     required super.imgBitmap,
@@ -59,6 +56,7 @@ class LayoutDetectionProcessImpl extends LayoutDetectionProcess {
       img,
       width: resizedSize.width.toInt(),
       height: resizedSize.height.toInt(),
+      interpolation: Interpolation.linear,
     );
 
     return encodePng(resizedImg);
@@ -104,9 +102,9 @@ class LayoutDetectionProcessImpl extends LayoutDetectionProcess {
 
   String _getModelNameForPlatform() {
     if (Platform.isAndroid) {
-      return _androidInternalModel;
+      return '$_modelName.tflite';
     } else if (Platform.isIOS) {
-      return _iosInternalModelName;
+      return '$_modelName.mlmodel';
     } else {
       throw Exception('Unsupported platform');
     }
@@ -184,11 +182,17 @@ class LayoutDetectionProcessImpl extends LayoutDetectionProcess {
     final resizedSize = _getResizedSize();
     final scaleX = imgSize.width / resizedSize.width;
     final scaleY = imgSize.height / resizedSize.height;
-    return Rect.fromLTRB(
-      (box[0] as num).toDouble() * scaleX,
-      (box[1] as num).toDouble() * scaleY,
-      (box[2] as num).toDouble() * scaleX,
-      (box[3] as num).toDouble() * scaleY,
+
+    final x = (box[0] as num).toDouble() * scaleX;
+    final y = (box[1] as num).toDouble() * scaleY;
+    final w = (box[2] as num).toDouble() * scaleX;
+    final h = (box[3] as num).toDouble() * scaleY;
+
+    return Rect.fromLTWH(
+      x.toDouble(),
+      y.toDouble(),
+      w.toDouble(),
+      h.toDouble(),
     );
   }
 }

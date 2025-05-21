@@ -3,68 +3,69 @@
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// PDF 로드 서비스
-/// - Asset, File, Bytes 경로 모두 지원
-/// - 내부 캐시를 사용해 중복 로드 방지
 class PdfService {
-  // 싱글톤 패턴
   PdfService._();
   static final PdfService instance = PdfService._();
 
-  // 로드된 문서 캐시
   final Map<String, PdfDocument> _cache = {};
 
-  /// Assets 폴더에서 PDF 로드
+  static const _recentKey = 'recent_pdf_paths';
+  static const _maxRecent = 10;
+
+  /// Asset에서 로드
   Future<PdfDocument> loadPdfFromAsset(String assetPath) async {
-    if (_cache.containsKey(assetPath)) {
-      return _cache[assetPath]!;
-    }
-    try {
-      final doc = await PdfDocument.openAsset(assetPath);
-      _cache[assetPath] = doc;
-      return doc;
-    } catch (e) {
-      throw Exception('PDF 에셋 로드 실패: $assetPath, 오류: \$e');
-    }
+    final doc = _cache[assetPath] ??= await PdfDocument.openAsset(assetPath);
+    await _addRecent(assetPath);
+    return doc;
   }
 
-  /// 로컬 파일 시스템에서 PDF 로드
+  /// 파일 시스템에서 로드
   Future<PdfDocument> loadPdfFromFile(File file) async {
     final key = file.path;
-    if (_cache.containsKey(key)) {
-      return _cache[key]!;
-    }
-    try {
-      final doc = await PdfDocument.openFile(key);
-      _cache[key] = doc;
-      return doc;
-    } catch (e) {
-      throw Exception('PDF 파일 로드 실패: \$key, 오류: \$e');
-    }
+    final doc = _cache[key] ??= await PdfDocument.openFile(key);
+    await _addRecent(key);
+    return doc;
   }
 
-  /// 메모리 바이트에서 PDF 로드 (예: 네트워크 다운로드 후)
-  Future<PdfDocument> loadPdfFromBytes(ByteData byteData, {String? cacheKey}) async {
-    final key = cacheKey ?? byteData.hashCode.toString();
-    if (_cache.containsKey(key)) {
-      return _cache[key]!;
-    }
-    try {
-      final doc = await PdfDocument.openData(byteData.buffer.asUint8List());
-      _cache[key] = doc;
-      return doc;
-    } catch (e) {
-      throw Exception('PDF 바이트 로드 실패: \$key, 오류: \$e');
-    }
+  /// 바이트로 로드
+  Future<PdfDocument> loadPdfFromBytes(ByteData data, {String? cacheKey}) async {
+    final key = cacheKey ?? data.hashCode.toString();
+    final doc = _cache[key] ??= await PdfDocument.openData(data.buffer.asUint8List());
+    await _addRecent(key);
+    return doc;
   }
 
-  /// 캐시된 문서 삭제
+  /// 캐시 초기화
   void clearCache([String? key]) {
-    if (key != null) {
-      _cache.remove(key);
-    } else {
-      _cache.clear();
-    }
+    if (key != null) _cache.remove(key);
+    else _cache.clear();
+  }
+
+  // ─────────────────────────────────────
+  // 아래는 “최근 파일 관리” 기능
+  // ─────────────────────────────────────
+
+  /// 최근 열었던 PDF 경로 리스트 가져오기
+  Future<List<String>> getRecentPaths() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(_recentKey) ?? [];
+  }
+
+  /// 경로를 최근 목록으로 추가 (중복 제거, 최대 _maxRecent 유지)
+  Future<void> _addRecent(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_recentKey) ?? <String>[];
+    list.remove(path);
+    list.insert(0, path);
+    if (list.length > _maxRecent) list.removeLast();
+    await prefs.setStringList(_recentKey, list);
+  }
+
+  /// 최근 목록 초기화
+  Future<void> clearRecentPaths() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_recentKey);
   }
 }

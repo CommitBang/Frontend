@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:isar/isar.dart';
 
 enum LayoutType { formula, text, number, header, algorithm }
 
@@ -17,5 +18,6 @@ abstract class BaseLayout {
   String? get latex;
 
   // 레이아웃 위치
+  @ignore
   Rect get rect;
 }

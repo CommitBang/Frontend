@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:isar/isar.dart';
 import 'base_layout.dart';
 
 // PDF 페이지 데이터 모델 인터페이스
@@ -7,6 +8,7 @@ abstract class BasePage {
   int get pageIndex;
 
   // 페이지 크기
+  @ignore
   Size get size;
 
   // 페이지 전체 텍스트

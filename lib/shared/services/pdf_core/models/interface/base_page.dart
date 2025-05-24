@@ -13,5 +13,5 @@ abstract class BasePage {
   String get fullText;
 
   // 레이아웃 목록
-  List<BaseLayout> getLayouts();
+  Future<List<BaseLayout>> getLayouts();
 }

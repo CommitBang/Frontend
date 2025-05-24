@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'base_page.dart';
 
 enum PDFStatus {
@@ -37,6 +39,9 @@ abstract class BasePdf {
   // 파일 상태
   PDFStatus get status;
 
+  // 썸네일 이미지
+  Future<Uint8List?> getThumbnail();
+
   // 페이지 목록
-  List<BasePage> getPages();
+  Future<List<BasePage>> getPages();
 }

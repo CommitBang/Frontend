@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:snapfig/features/home/widgets/empty_files_icon.dart';
 import 'package:snapfig/shared/services/pdf_core/models/models.dart';
 import 'pdf_card.dart';
 import 'pdf_list_item.dart';
@@ -14,65 +15,83 @@ class RecentWidget extends StatefulWidget {
 
 class _RecentWidgetState extends State<RecentWidget> {
   // 샘플 PDF 데이터
-  List<BasePdf> get samplePdfs => List.generate(5, (i) => DummyPdf(index: i));
+  List<BasePdf> get samplePdfs => List.generate(12, (i) => DummyPdf(index: i));
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final pdfs = samplePdfs;
+    final recentPdfs = pdfs.take(3).toList();
+    final otherPdfs = pdfs.skip(3).toList();
+    final isEmpty = pdfs.isEmpty;
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar.medium(
-            title: const Text('최근 문서'),
-            backgroundColor: theme.colorScheme.surface,
-            surfaceTintColor: Colors.transparent,
-            elevation: 1,
-            centerTitle: true,
-            expandedHeight: 100,
-            toolbarHeight: 56,
-            collapsedHeight: 70,
-            titleTextStyle: theme.textTheme.headlineSmall,
-          ),
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 300,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: CarouselView(
-                  itemExtent: 300,
-                  enableSplash: false,
-                  padding: const EdgeInsets.fromLTRB(4, 11, 4, 11),
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(color: theme.colorScheme.outline),
-                    borderRadius: const BorderRadius.all(Radius.circular(15)),
-                  ),
-                  children:
-                      pdfs
-                          .map(
-                            (pdf) => PdfCard(
-                              pdfData: pdf,
-                              onEdit: () {},
-                              onOpen: () {},
-                            ),
-                          )
-                          .toList(),
-                ),
+      body: Stack(
+        children: [
+          if (isEmpty)
+            const Align(
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [EmptyFilesIcon()],
               ),
             ),
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate((context, idx) {
-              final itemIndex = idx ~/ 2;
-              if (idx.isEven) {
-                return PdfListItem(
-                  pdfData: pdfs[itemIndex],
-                  onTap: () {},
-                  isEditing: false,
-                );
-              }
-              return Divider(height: 1, color: theme.colorScheme.outline);
-            }, childCount: max(pdfs.length * 2 - 1, 0)),
+          CustomScrollView(
+            slivers: [
+              SliverAppBar.medium(
+                title: const Text('최근 문서'),
+                backgroundColor: theme.colorScheme.surface,
+                surfaceTintColor: Colors.transparent,
+                elevation: 1,
+                centerTitle: true,
+                expandedHeight: 100,
+                toolbarHeight: 56,
+                collapsedHeight: 70,
+                titleTextStyle: theme.textTheme.headlineSmall,
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 300,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: CarouselView(
+                      itemExtent: 300,
+                      enableSplash: false,
+                      padding: const EdgeInsets.fromLTRB(4, 11, 4, 11),
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(color: theme.colorScheme.outline),
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(15),
+                        ),
+                      ),
+                      children:
+                          recentPdfs
+                              .map(
+                                (pdf) => PdfCard(
+                                  pdfData: pdf,
+                                  onEdit: () {},
+                                  onOpen: () {},
+                                ),
+                              )
+                              .toList(),
+                    ),
+                  ),
+                ),
+              ),
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, idx) {
+                  final itemIndex = idx ~/ 2;
+                  if (idx.isEven) {
+                    return PdfListItem(
+                      pdfData: otherPdfs[itemIndex],
+                      onTap: () {},
+                      isEditing: false,
+                    );
+                  }
+                  return Divider(height: 1, color: theme.colorScheme.outline);
+                }, childCount: max(otherPdfs.length * 2 - 1, 0)),
+              ),
+            ],
           ),
         ],
       ),

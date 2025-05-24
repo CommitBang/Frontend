@@ -1,10 +1,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:snapfig/features/home/widgets/add_document_button.dart';
 import 'package:snapfig/features/home/widgets/empty_files_icon.dart';
 import 'package:snapfig/shared/services/pdf_core/models/models.dart';
 import 'pdf_card.dart';
 import 'pdf_list_item.dart';
+import 'package:snapfig/features/home/widgets/dummy_pdf.dart';
 
 class RecentWidget extends StatefulWidget {
   const RecentWidget({super.key});
@@ -15,14 +17,15 @@ class RecentWidget extends StatefulWidget {
 
 class _RecentWidgetState extends State<RecentWidget> {
   // 샘플 PDF 데이터
-  List<BasePdf> get samplePdfs => List.generate(12, (i) => DummyPdf(index: i));
+  List<BasePdf> get samplePdfs => List.generate(13, (i) => DummyPdf(index: i));
+  static const int _maxRecentPdfs = 4;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final pdfs = samplePdfs;
-    final recentPdfs = pdfs.take(3).toList();
-    final otherPdfs = pdfs.skip(3).toList();
+    final recentPdfs = pdfs.take(_maxRecentPdfs).toList();
+    final otherPdfs = pdfs.skip(_maxRecentPdfs).toList();
     final isEmpty = pdfs.isEmpty;
 
     return Scaffold(
@@ -95,38 +98,7 @@ class _RecentWidgetState extends State<RecentWidget> {
           ),
         ],
       ),
-      floatingActionButton: OutlinedButton.icon(
-        onPressed: () {},
-        style: OutlinedButton.styleFrom(
-          backgroundColor: theme.colorScheme.secondaryContainer,
-        ),
-        label: const Text('새 문서 추가'),
-        icon: const Icon(Icons.add),
-      ),
+      floatingActionButton: const AddDocumentButton(),
     );
   }
-}
-
-// 더미 PDF 데이터용 클래스 (BasePdf 구현)
-class DummyPdf implements BasePdf {
-  final int index;
-  DummyPdf({required this.index});
-
-  @override
-  String get name => '샘플 PDF $index';
-  @override
-  String get path => '/sample/path/$index.pdf';
-  @override
-  DateTime get createdAt => DateTime.now().subtract(Duration(days: index * 2));
-  @override
-  DateTime get updatedAt => DateTime.now().subtract(Duration(days: index));
-  @override
-  int get totalPages => 10 + index;
-  @override
-  int get currentPage => 1;
-  @override
-  PDFStatus get status =>
-      index == 2 ? PDFStatus.processing : PDFStatus.completed;
-  @override
-  List<BasePage> getPages() => [];
 }

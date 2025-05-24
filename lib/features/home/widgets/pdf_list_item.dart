@@ -3,34 +3,21 @@ import 'package:snapfig/shared/services/pdf_core/models/models.dart';
 import 'package:snapfig/core/theme/theme.dart';
 import 'package:intl/intl.dart';
 
-class PdfListItem extends StatefulWidget {
+class PdfListItem extends StatelessWidget {
   final BasePdf pdfData;
   final VoidCallback? onTap;
   final bool isEditing;
+  final bool isSelected;
   final Function(bool?)? onSelected;
-  final bool initialChecked;
 
   const PdfListItem({
     super.key,
     required this.pdfData,
     this.isEditing = false,
+    this.isSelected = false,
     this.onTap,
     this.onSelected,
-    this.initialChecked = false,
   });
-
-  @override
-  State<PdfListItem> createState() => _PdfListItemState();
-}
-
-class _PdfListItemState extends State<PdfListItem> {
-  late bool isChecked;
-
-  @override
-  void initState() {
-    super.initState();
-    isChecked = widget.initialChecked;
-  }
 
   Widget _buildThumbnail(BuildContext context) {
     final theme = Theme.of(context);
@@ -51,7 +38,7 @@ class _PdfListItemState extends State<PdfListItem> {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('yyyy.MM.dd');
     return Text(
-      '${widget.pdfData.totalPages}페이지 / ${dateFormat.format(widget.pdfData.updatedAt)}',
+      '${pdfData.totalPages}페이지 / ${dateFormat.format(pdfData.updatedAt)}',
       style: appTextTheme.bodySmall?.copyWith(
         color: theme.colorScheme.surfaceContainerHighest,
       ),
@@ -62,13 +49,13 @@ class _PdfListItemState extends State<PdfListItem> {
 
   Widget _buildOCRProgressBar(BuildContext context) {
     final theme = Theme.of(context);
-    final progress = switch (widget.pdfData.status) {
+    final progress = switch (pdfData.status) {
       PDFStatus.pending => 0.3,
       PDFStatus.completed => 1.0,
       PDFStatus.processing => 0.5,
       PDFStatus.failed => 0.0,
     };
-    final progressText = switch (widget.pdfData.status) {
+    final progressText = switch (pdfData.status) {
       PDFStatus.pending => 'PDF 정보 추출 중',
       PDFStatus.completed => 'PDF 정보 추출 완료',
       PDFStatus.processing => 'PDF 정보 추출 중',
@@ -103,11 +90,12 @@ class _PdfListItemState extends State<PdfListItem> {
   Widget _buildCheckbox(BuildContext context) {
     final theme = Theme.of(context);
     return Checkbox(
-      value: isChecked,
-      onChanged: (value) {
-        setState(() => isChecked = value ?? false);
-        widget.onSelected?.call(value);
-      },
+      value: isSelected,
+      onChanged:
+          (value) =>
+              pdfData.status != PDFStatus.processing
+                  ? onSelected?.call(value)
+                  : null,
       activeColor: theme.colorScheme.primary,
       checkColor: theme.colorScheme.onPrimary,
     );
@@ -117,13 +105,25 @@ class _PdfListItemState extends State<PdfListItem> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListTile(
-      enabled: widget.pdfData.status == PDFStatus.completed,
-      onTap: widget.onTap,
+      enabled: pdfData.status == PDFStatus.completed,
+      onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading:
-          widget.isEditing ? _buildCheckbox(context) : _buildThumbnail(context),
+      leading: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SizeTransition(
+              sizeFactor: animation,
+              axis: Axis.horizontal,
+              child: child,
+            ),
+          );
+        },
+        child: isEditing ? _buildCheckbox(context) : _buildThumbnail(context),
+      ),
       title: Text(
-        widget.pdfData.name,
+        pdfData.name,
         style: appTextTheme.titleMedium?.copyWith(
           color: theme.colorScheme.onSurface,
         ),
@@ -131,7 +131,7 @@ class _PdfListItemState extends State<PdfListItem> {
         overflow: TextOverflow.ellipsis,
       ),
       subtitle:
-          widget.pdfData.status == PDFStatus.completed
+          pdfData.status == PDFStatus.completed
               ? _buildMetadata(context)
               : _buildOCRProgressBar(context),
     );

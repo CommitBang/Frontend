@@ -8,7 +8,8 @@ class PdfCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onOpen;
 
-  static const double minInfoWidth = 200;
+  static const double minInfoWidth = 120;
+  static const double minActionsWidth = 230;
   static const double fadeRange = 60; // 투명도 변화 구간(px)
 
   const PdfCard({
@@ -18,55 +19,44 @@ class PdfCard extends StatelessWidget {
     required this.onOpen,
   });
 
-  Widget _buildCard(BuildContext context, {double infoOpacity = 1.0}) {
-    final theme = Theme.of(context);
-    return Container(
-      color: theme.colorScheme.surface,
-      child: Stack(
-        children: [
-          const Positioned.fill(child: _PdfThumbnail()),
-          AnimatedOpacity(
-            opacity: infoOpacity,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 130),
-              child: Container(
-                color: theme.colorScheme.surface,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _PdfTextContent(
-                      name: pdfData.name,
-                      totalPages: pdfData.totalPages,
-                      updatedAt: pdfData.updatedAt,
-                    ),
-                    const Spacer(),
-                    _PdfCardActions(onEdit: onEdit, onOpen: onOpen),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  double _calculateInfoOpacity(double width) {
+    if (width <= minInfoWidth) return 0.0;
+    if (width < minInfoWidth + fadeRange) {
+      return (width - minInfoWidth) / fadeRange;
+    }
+    return 1.0;
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        double infoOpacity = 1.0;
-        if (width <= minInfoWidth) {
-          infoOpacity = 0.0;
-        } else if (width < minInfoWidth + fadeRange) {
-          infoOpacity = (width - minInfoWidth) / fadeRange;
-        } else {
-          infoOpacity = 1.0;
-        }
-        return _buildCard(context, infoOpacity: infoOpacity);
+        final infoOpacity = _calculateInfoOpacity(constraints.maxWidth);
+        final showActions = constraints.maxWidth > minActionsWidth;
+
+        return Container(
+          color: theme.colorScheme.surface,
+          child: Stack(
+            children: [
+              const Positioned.fill(child: _PdfThumbnail()),
+              AnimatedOpacity(
+                opacity: infoOpacity,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 130),
+                  child: _PdfInfoSection(
+                    pdfData: pdfData,
+                    onEdit: onEdit,
+                    onOpen: onOpen,
+                    showActions: showActions,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
       },
     );
   }
@@ -83,6 +73,45 @@ class _PdfThumbnail extends StatelessWidget {
       ),
       child: const Center(
         child: Icon(Icons.picture_as_pdf, size: 48, color: Color(0xFF898989)),
+      ),
+    );
+  }
+}
+
+class _PdfInfoSection extends StatelessWidget {
+  final BasePdf pdfData;
+  final VoidCallback onEdit;
+  final VoidCallback onOpen;
+  final bool showActions;
+
+  const _PdfInfoSection({
+    required this.pdfData,
+    required this.onEdit,
+    required this.onOpen,
+    this.showActions = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      color: theme.colorScheme.surface,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _PdfTextContent(
+            name: pdfData.name,
+            totalPages: pdfData.totalPages,
+            updatedAt: pdfData.updatedAt,
+          ),
+          const Spacer(),
+          AnimatedOpacity(
+            opacity: showActions ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: _PdfCardActions(onEdit: onEdit, onOpen: onOpen),
+          ),
+        ],
       ),
     );
   }

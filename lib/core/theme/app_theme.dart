@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '/core/theme/color_scheme.dart';
+import 'package:snapfig/core/theme/color_scheme.dart';
+import 'package:snapfig/core/theme/text_theme.dart';
 
 final ThemeData lightTheme = ThemeData(
   colorScheme: const ColorScheme(
@@ -19,8 +20,9 @@ final ThemeData lightTheme = ThemeData(
     surface: AppColors.lightSurface,
     onSurface: AppColors.lightOnSurface,
     surfaceContainerHighest: AppColors.lightOnSurfaceVarient,
-    outline: AppColors.lightOnSurfaceContainerVarient,
+    outline: AppColors.lightOutline,
   ),
+  textTheme: appTextTheme,
 );
 
 final ThemeData darkTheme = ThemeData(
@@ -41,6 +43,7 @@ final ThemeData darkTheme = ThemeData(
     surface: AppColors.darkSurface,
     onSurface: AppColors.darkOnSurface,
     surfaceContainerHighest: AppColors.darkOnSurfaceVarient,
-    outline: AppColors.darkOnSurfaceContainerVarient,
+    outline: AppColors.darkOutline,
   ),
+  textTheme: appTextTheme,
 );

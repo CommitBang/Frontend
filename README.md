@@ -44,7 +44,14 @@ lib/
 │   │   └── document_card.dart
 │   └── services/       # 공통 서비스
 │       ├── ocr_service.dart
-│       └── pdf_service.dart
+│       ├── pdf_service.dart
+│       └── pdf_core/               ← develop에서 가져온 패키지
+│           ├── models.dart        ← 전체 모델을 한 번에 export
+│           └── models/
+│               └── interface/     ← 각 모델별 인터페이스 정의
+│                   ├── base_layout.dart
+│                   ├── base_page.dart
+│                   └── base_pdf.dart
 └── main.dart           # 앱 진입점
 
 test/                   # 테스트 파일

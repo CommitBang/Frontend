@@ -20,6 +20,7 @@ class AppColors {
   static const lightSurfaceContainer = Color(0xFFF2F2F0);
   static const lightOnSurfaceContainer = Color(0xFF666666);
   static const lightOnSurfaceContainerVarient = Color(0xFFE9E9E9);
+  static const lightOutline = Color(0xFFE9E9E9);
 
   // Dark Theme Colors
   static const darkPrimary = Color(0xFFDC5F00);
@@ -40,4 +41,5 @@ class AppColors {
   static const darkSurfaceContainer = Color(0xFF282828);
   static const darkOnSurfaceContainer = Color(0xFF666666);
   static const darkOnSurfaceContainerVarient = Color(0xFFE9E9E9);
+  static const darkOutline = Color(0xFF313131);
 }

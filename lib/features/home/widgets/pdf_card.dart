@@ -46,7 +46,7 @@ class PdfCard extends StatelessWidget {
                 curve: Curves.easeInOut,
                 child: Padding(
                   padding: const EdgeInsets.only(top: 130),
-                  child: _PdfInfoSection(
+                  child: _PDFMetadata(
                     pdfData: pdfData,
                     onEdit: onEdit,
                     onOpen: onOpen,
@@ -78,13 +78,13 @@ class _PdfThumbnail extends StatelessWidget {
   }
 }
 
-class _PdfInfoSection extends StatelessWidget {
+class _PDFMetadata extends StatelessWidget {
   final BasePdf pdfData;
   final VoidCallback onEdit;
   final VoidCallback onOpen;
   final bool showActions;
 
-  const _PdfInfoSection({
+  const _PDFMetadata({
     required this.pdfData,
     required this.onEdit,
     required this.onOpen,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:snapfig/features/home/widgets/documents_widget.dart';
-import 'package:snapfig/features/home/widgets/recent_widget.dart';
+import 'package:snapfig/features/home/screens/documents_widget.dart';
+import 'package:snapfig/features/home/screens/recent_widget.dart';
 
 class HomeWidget extends StatefulWidget {
   const HomeWidget({super.key});

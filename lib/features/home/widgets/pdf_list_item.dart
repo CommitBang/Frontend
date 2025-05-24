@@ -8,7 +8,7 @@ class PdfListItem extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isEditing;
   final bool isSelected;
-  final Function(bool?)? onSelected;
+  final ValueChanged<bool?>? onSelected;
 
   const PdfListItem({
     super.key,
@@ -19,7 +19,63 @@ class PdfListItem extends StatelessWidget {
     this.onSelected,
   });
 
-  Widget _buildThumbnail(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return ListTile(
+      enabled: pdfData.status == PDFStatus.completed,
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      leading: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SizeTransition(
+              sizeFactor: animation,
+              axis: Axis.horizontal,
+              child: child,
+            ),
+          );
+        },
+        child:
+            isEditing
+                ? Checkbox(
+                  value: isSelected,
+                  onChanged:
+                      pdfData.status != PDFStatus.processing
+                          ? onSelected
+                          : null,
+                  activeColor: theme.colorScheme.primary,
+                  checkColor: theme.colorScheme.onPrimary,
+                )
+                : const _Thumbnail(),
+      ),
+      title: Text(
+        pdfData.name,
+        style: appTextTheme.titleMedium?.copyWith(
+          color: theme.colorScheme.onSurface,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle:
+          pdfData.status == PDFStatus.completed
+              ? _PDFMetadata(
+                totalPages: pdfData.totalPages,
+                updatedAt: pdfData.updatedAt,
+              )
+              : _OCRProgressBar(status: pdfData.status),
+    );
+  }
+}
+
+class _Thumbnail extends StatelessWidget {
+  const _Thumbnail();
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
       width: 56,
@@ -33,12 +89,20 @@ class PdfListItem extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildMetadata(BuildContext context) {
+class _PDFMetadata extends StatelessWidget {
+  final int totalPages;
+  final DateTime updatedAt;
+
+  const _PDFMetadata({required this.totalPages, required this.updatedAt});
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('yyyy.MM.dd');
     return Text(
-      '${pdfData.totalPages}페이지 / ${dateFormat.format(pdfData.updatedAt)}',
+      '$totalPages페이지 / ${dateFormat.format(updatedAt)}',
       style: appTextTheme.bodySmall?.copyWith(
         color: theme.colorScheme.surfaceContainerHighest,
       ),
@@ -46,16 +110,23 @@ class PdfListItem extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
     );
   }
+}
 
-  Widget _buildOCRProgressBar(BuildContext context) {
+class _OCRProgressBar extends StatelessWidget {
+  final PDFStatus status;
+
+  const _OCRProgressBar({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final progress = switch (pdfData.status) {
+    final progress = switch (status) {
       PDFStatus.pending => 0.3,
       PDFStatus.completed => 1.0,
       PDFStatus.processing => 0.5,
       PDFStatus.failed => 0.0,
     };
-    final progressText = switch (pdfData.status) {
+    final progressText = switch (status) {
       PDFStatus.pending => 'PDF 정보 추출 중',
       PDFStatus.completed => 'PDF 정보 추출 완료',
       PDFStatus.processing => 'PDF 정보 추출 중',
@@ -84,56 +155,6 @@ class PdfListItem extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildCheckbox(BuildContext context) {
-    final theme = Theme.of(context);
-    return Checkbox(
-      value: isSelected,
-      onChanged:
-          (value) =>
-              pdfData.status != PDFStatus.processing
-                  ? onSelected?.call(value)
-                  : null,
-      activeColor: theme.colorScheme.primary,
-      checkColor: theme.colorScheme.onPrimary,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ListTile(
-      enabled: pdfData.status == PDFStatus.completed,
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        transitionBuilder: (child, animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: SizeTransition(
-              sizeFactor: animation,
-              axis: Axis.horizontal,
-              child: child,
-            ),
-          );
-        },
-        child: isEditing ? _buildCheckbox(context) : _buildThumbnail(context),
-      ),
-      title: Text(
-        pdfData.name,
-        style: appTextTheme.titleMedium?.copyWith(
-          color: theme.colorScheme.onSurface,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle:
-          pdfData.status == PDFStatus.completed
-              ? _buildMetadata(context)
-              : _buildOCRProgressBar(context),
     );
   }
 }

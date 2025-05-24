@@ -1,12 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:snapfig/features/home/widgets/add_document_button.dart';
-import 'package:snapfig/features/home/widgets/empty_files_icon.dart';
 import 'package:snapfig/shared/services/pdf_core/models/models.dart';
-import 'pdf_card.dart';
-import 'pdf_list_item.dart';
-import 'package:snapfig/features/home/widgets/dummy_pdf.dart';
+import 'package:snapfig/features/home/screens/dummy_pdf.dart';
+import 'package:snapfig/features/home/widgets/home_components.dart';
 
 class RecentWidget extends StatefulWidget {
   const RecentWidget({super.key});

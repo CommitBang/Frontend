@@ -1,4 +1,5 @@
-import 'package:path_provider/path_provider.dart';
+import 'dart:async';
+
 import 'package:isar/isar.dart';
 import 'package:snapfig/shared/services/ocr_core/ocr_core.dart';
 import 'package:snapfig/shared/services/pdf_core/models/models.dart';
@@ -10,34 +11,48 @@ import 'dart:isolate';
 class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   late final Isar _isar;
   final OCR _ocrProvider;
-  final Logger _logger = Logger('PDFProviderImpl');
+  final String _dbPath;
   final Set<Id> _processing = {};
-
+  late final StreamSubscription<void> _databaseSubscription;
   List<PDFModel> _pdfs = [];
+  final Logger _logger = Logger('PDFProviderImpl');
 
   @override
   List<BasePdf> get pdfs => _pdfs;
 
-  PDFProviderImpl({required OCR ocrProvider}) : _ocrProvider = ocrProvider {
-    _initDatabase();
+  PDFProviderImpl._({required OCR ocrProvider, required String dbPath})
+    : _ocrProvider = ocrProvider,
+      _dbPath = dbPath;
+
+  // 데이터베이스를 로드하고 프로바이더를 반환합니다.
+  static Future<PDFProviderImpl<OCR>> load<OCR extends OCRProvider>({
+    required OCR ocrProvider,
+    required String dbPath,
+  }) async {
+    final provider = PDFProviderImpl<OCR>._(
+      ocrProvider: ocrProvider,
+      dbPath: dbPath,
+    );
+    await provider._initDatabase();
+    return provider;
   }
 
   // 데이터베이스 초기화
   Future<void> _initDatabase() async {
-    final dir = await getApplicationDocumentsDirectory();
     _isar = await Isar.open([
       PDFModelSchema,
       PageModelSchema,
       LayoutModelSchema,
-    ], directory: dir.path);
+    ], directory: _dbPath);
     _listenDatabase();
   }
 
   void _listenDatabase() {
     final stream = _isar.pDFModels.watchLazy();
-    stream.listen((_) async {
+    _databaseSubscription = stream.listen((_) async {
       _pdfs = await _isar.pDFModels.where().findAll();
       _logger.info('PDFs are changed.');
+      notifyListeners();
       // OCR 처리 대기 목록 처리
       final pendingPdfs = await _getPendingPdfs();
       for (final pdf in pendingPdfs) {
@@ -61,7 +76,11 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   Future<void> _processPdfWithOcr(PDFModel pdf) async {
     await updatePDF(id: pdf.id, status: PDFStatus.processing);
     final receivePort = ReceivePort();
-    await Isolate.spawn(_ocrProcess, [_ocrProvider, pdf, receivePort.sendPort]);
+    await Isolate.spawn(_ocrProcess, [
+      _ocrProvider,
+      pdf.path,
+      receivePort.sendPort,
+    ]);
     receivePort.listen((ocrResult) async {
       try {
         await _updatePdfModelWithOcrResult(pdf, ocrResult);
@@ -78,10 +97,10 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   /// Isolate에서 OCR 처리
   static void _ocrProcess(List args) async {
     final OCRProvider ocrProvider = args[0];
-    final PDFModel pdf = args[1];
+    final String pdfPath = args[1];
     final SendPort sendPort = args[2];
     try {
-      final ocrResult = await ocrProvider.process(pdf);
+      final ocrResult = await ocrProvider.process(pdfPath);
       sendPort.send(ocrResult);
     } catch (e) {
       sendPort.send(null);
@@ -154,5 +173,12 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
         .optional(keyword != null, (q) => q.nameContains(keyword!))
         .optional(status != null, (q) => q.statusEqualTo(status!));
     return await query.findAll();
+  }
+
+  @override
+  void dispose() {
+    _databaseSubscription.cancel();
+    _isar.close();
+    super.dispose();
   }
 }

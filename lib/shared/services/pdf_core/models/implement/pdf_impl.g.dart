@@ -62,10 +62,11 @@ const PDFModelSchema = CollectionSchema(
   indexes: {},
   links: {
     r'pages': LinkSchema(
-      id: 8765040247311474737,
+      id: 8977893419427002576,
       name: r'pages',
       target: r'pdf_page',
       single: false,
+      linkName: r'pdf',
     )
   },
   embeddedSchemas: {},

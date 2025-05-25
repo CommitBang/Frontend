@@ -24,7 +24,9 @@ class PageModel extends BasePage {
   final double _height;
 
   // ====== 관계 ======
-  IsarLinks<LayoutModel> layouts = IsarLinks<LayoutModel>();
+  @Backlink(to: 'page')
+  final layouts = IsarLinks<LayoutModel>();
+
   IsarLink<PDFModel> pdf = IsarLink<PDFModel>();
 
   // ====== 생성자 ======

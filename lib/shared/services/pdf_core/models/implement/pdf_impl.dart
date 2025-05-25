@@ -32,10 +32,14 @@ class PDFModel extends BasePdf {
 
   int _currentPage = 0;
 
-  PDFStatus _status;
+  @Name('pdf_status')
+  @enumerated
+  @override
+  PDFStatus status;
 
   // ====== 관계 ======
-  IsarLinks<PageModel> pages = IsarLinks<PageModel>();
+  @Backlink(to: 'pdf')
+  final pages = IsarLinks<PageModel>();
 
   // ====== 생성자 ======
   PDFModel({
@@ -44,16 +48,16 @@ class PDFModel extends BasePdf {
     required this.createdAt,
     required this.totalPages,
     required int currentPage,
-    required PDFStatus status,
-  }) : _currentPage = currentPage,
-       _status = status;
+    required this.status,
+  }) : _currentPage = currentPage;
 
   PDFModel.create({
     required this.name,
     required this.path,
     required this.createdAt,
     required this.totalPages,
-  }) : _status = PDFStatus.pending;
+    required this.status,
+  });
 
   // ====== 게터 ======
   @Name('updated_at')
@@ -63,10 +67,6 @@ class PDFModel extends BasePdf {
   @Name('current_page')
   @override
   int get currentPage => _currentPage;
-
-  @Name('pdf_status')
-  @enumerated
-  PDFStatus get status => _status;
 
   @override
   Future<Uint8List?> getThumbnail() async => null;

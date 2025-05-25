@@ -46,10 +46,11 @@ const PageModelSchema = CollectionSchema(
   indexes: {},
   links: {
     r'layouts': LinkSchema(
-      id: -8887149590133650215,
+      id: -916033694433650513,
       name: r'layouts',
       target: r'pdf_layout',
       single: false,
+      linkName: r'page',
     ),
     r'pdf': LinkSchema(
       id: -8981500599912119256,

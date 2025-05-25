@@ -43,28 +43,24 @@ class PdfDocumentModel implements BasePdf {
     // 2) 페이지별 레이아웃 모으기
     final pages = <PdfPageModel>[];
     for (var i = 0; i < doc.pages.length; i++) {
-      // parsing 블록 중 page_index가 int이고 i와 일치하는 것만
-      final parsingOnPage = parsingBlocks
-          .where((b) {
-        final idx = b['page_index'];
-        return idx is int && idx == i;
-      })
-          .map((b) => PdfLayoutModel.fromParsingBlock(b, i));
+      final layouts = <PdfLayoutModel>[];
 
-      // formula 블록 중 page_index가 int이고 i와 일치하는 것만
-      final formulaOnPage = formulaBlocks
-          .where((b) {
-        final idx = b['page_index'];
-        return idx is int && idx == i;
-      })
-          .map((b) => PdfLayoutModel.fromFormulaBlock(b, i));
+      // parsing 블록
+      for (final b in parsingBlocks) {
+        final idx = b['page_index'] is int ? b['page_index'] as int : 0;
+        if (idx == i) {
+          layouts.add(PdfLayoutModel.fromParsingBlock(b, i));
+        }
+      }
 
-      final layouts = [
-        ...parsingOnPage,
-        ...formulaOnPage,
-      ].toList();
+      // formula 블록
+      for (final b in formulaBlocks) {
+        final idx = b['page_index'] is int ? b['page_index'] as int : 0;
+        if (idx == i) {
+          layouts.add(PdfLayoutModel.fromFormulaBlock(b, i));
+        }
+      }
 
-      // PdfPageModel 생성 시 named parameters 사용
       pages.add(PdfPageModel(
         document: doc,
         pageIndex: i,
@@ -93,7 +89,7 @@ class PdfDocumentModel implements BasePdf {
   int get totalPages => _pages.length;
 
   @override
-  int get currentPage => 0; // UI에서 별도 관리하도록 대체 가능
+  int get currentPage => 0; // UI에서 별도 관리
 
   @override
   PDFStatus get status => PDFStatus.completed;
@@ -101,5 +97,3 @@ class PdfDocumentModel implements BasePdf {
   @override
   List<BasePage> getPages() => _pages;
 }
-
-

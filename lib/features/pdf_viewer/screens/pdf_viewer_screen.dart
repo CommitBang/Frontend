@@ -40,8 +40,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     _tabController = TabController(length: 2, vsync: this, initialIndex: 0)
       ..addListener(() => setState(() {}));
 
-    _pdfFuture = PdfService.instance.loadPdfFromAsset('assets/sample.pdf');
-    _loadPdf(path: 'assets/sample.pdf', isAsset: true);
+    _pdfFuture = PdfService.instance.loadPdfFromAsset('assets/sample_ocr_test.pdf'); /// sample.pdf 진입점
+    _loadPdf(path: 'assets/sample_ocr_test.pdf', isAsset: true);
   }
 
   Future<void> _loadPdf({
@@ -66,6 +66,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
           .expand((page) => page.getLayouts().whereType<PdfLayoutModel>())
           .toList();
       _searchQuery = '';
+      /// ★ 여기가 핵심: FutureBuilder 가 바라보는 Future 도 갱신
+      _pdfFuture = Future.value(doc); ///
     });
   }
 

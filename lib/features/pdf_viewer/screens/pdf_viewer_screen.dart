@@ -1,7 +1,6 @@
 // lib/features/pdf_viewer/screens/pdf_viewer_screen.dart
 
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
@@ -14,7 +13,7 @@ import 'package:pdf_viewer/shared/services/pdf_core/models/pdf_layout_model.dart
 import 'package:pdf_viewer/features/pdf_viewer/widgets/pdf_page_viewer.dart';
 
 class PdfViewerScreen extends StatefulWidget {
-  const PdfViewerScreen({Key? key}) : super(key: key);
+  const PdfViewerScreen({super.key});
 
   @override
   State<PdfViewerScreen> createState() => _PdfViewerScreenState();
@@ -25,14 +24,16 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
   late Future<PdfDocument> _pdfFuture;
   late TabController _tabController;
 
-  // GlobalKey로 PdfPageViewer 상태에 직접 접근
   final GlobalKey<PdfPageViewerState> _viewerKey = GlobalKey<PdfPageViewerState>();
-
   List<String> _recentPaths = [];
   List<PdfPageModel> _pages = [];
   List<PdfLayoutModel> _figures = [];
-
   String _searchQuery = '';
+  bool _sidebarVisible = true;
+
+  // 임시 상태: 확대율 및 현재 페이지
+  double _zoomPercent = 100;
+  int _currentPage = 1;
 
   @override
   void initState() {
@@ -40,14 +41,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     _tabController = TabController(length: 2, vsync: this, initialIndex: 0)
       ..addListener(() => setState(() {}));
 
-    _pdfFuture = PdfService.instance.loadPdfFromAsset('assets/sample_ocr_test.pdf'); /// sample.pdf 진입점
     _loadPdf(path: 'assets/sample_ocr_test.pdf', isAsset: true);
   }
 
-  Future<void> _loadPdf({
-    required String path,
-    required bool isAsset,
-  }) async {
+  Future<void> _loadPdf({required String path, required bool isAsset}) async {
     final doc = isAsset
         ? await PdfService.instance.loadPdfFromAsset(path)
         : await PdfService.instance.loadPdfFromFile(File(path));
@@ -60,14 +57,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     final recents = await PdfService.instance.getRecentPaths();
 
     setState(() {
+      _pdfFuture = Future.value(doc);
       _recentPaths = recents;
       _pages = model.getPages().cast<PdfPageModel>();
       _figures = _pages
           .expand((page) => page.getLayouts().whereType<PdfLayoutModel>())
           .toList();
-      _searchQuery = '';
-      /// ★ 여기가 핵심: FutureBuilder 가 바라보는 Future 도 갱신
-      _pdfFuture = Future.value(doc); ///
+      _currentPage = 1;
+      _zoomPercent = 100;
     });
   }
 
@@ -77,11 +74,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
       allowedExtensions: ['pdf'],
     );
     if (result != null && result.files.single.path != null) {
-      final path = result.files.single.path!;
-      setState(() {
-        _pdfFuture = PdfService.instance.loadPdfFromFile(File(path));
-      });
-      await _loadPdf(path: path, isAsset: false);
+      final pth = result.files.single.path!;
+      await _loadPdf(path: pth, isAsset: false);
     }
   }
 
@@ -93,23 +87,46 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
         separatorBuilder: (_, __) => const Divider(),
         itemBuilder: (_, idx) {
           final path = _recentPaths[idx];
-          final name = p.basename(path);
           return ListTile(
             leading: const Icon(Icons.picture_as_pdf),
-            title: Text(name),
+            title: Text(p.basename(path)),
             subtitle: Text(path, overflow: TextOverflow.ellipsis),
             onTap: () {
               Navigator.pop(context);
-              setState(() {
-                _pdfFuture =
-                    PdfService.instance.loadPdfFromFile(File(path));
-              });
               _loadPdf(path: path, isAsset: false);
             },
           );
         },
       ),
     );
+  }
+
+  Future<void> _promptPageJump() async {
+    final input = await showDialog<String>(
+      context: context,
+      builder: (_) {
+        String txt = '';
+        return AlertDialog(
+          title: const Text('Go to page'),
+          content: TextField(
+            keyboardType: TextInputType.number,
+            onChanged: (v) => txt = v,
+            decoration: const InputDecoration(hintText: 'Enter page number'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(context, txt), child: const Text('Go')),
+          ],
+        );
+      },
+    );
+    if (input != null && input.isNotEmpty) {
+      final num = int.tryParse(input);
+      if (num != null && num > 0 && num <= _pages.length - 1) {
+        _viewerKey.currentState?.jumpToPage(num);
+        setState(() => _currentPage = num);
+      }
+    }
   }
 
   @override
@@ -120,178 +137,68 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
 
   @override
   Widget build(BuildContext context) {
-    // 페이지 인덱스 0은 건너뛰고, 실제 사용자용 번호(1부터) 필터링
-    final pageList = _pages.where((p) => p.pageIndex > 0).toList();
-    final filteredPages = pageList
-        .where((p) => p.pageIndex.toString().contains(_searchQuery))
+    final filteredPages = _pages
+        .where((p) => p.pageIndex > 0 && p.pageIndex.toString().contains(_searchQuery))
         .toList();
 
     final filteredFigures = _figures
-        .where((f) =>
-        f.content.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where((f) => f.content.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('PDF Viewer'),
+        leading: IconButton(
+          icon: Icon(_sidebarVisible ? Icons.chevron_right : Icons.chevron_left),
+          onPressed: () => setState(() => _sidebarVisible = !_sidebarVisible),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: 'Recent PDFs',
-            onPressed: _showRecentList,
-          ),
-          IconButton(
-            icon: const Icon(Icons.folder_open),
-            tooltip: 'Load from device',
-            onPressed: _pickPdfFromDevice,
-          ),
+          IconButton(icon: const Icon(Icons.history), onPressed: _showRecentList),
+          IconButton(icon: const Icon(Icons.folder_open), onPressed: _pickPdfFromDevice),
         ],
       ),
       body: FutureBuilder<PdfDocument>(
         future: _pdfFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) {
-            return Center(child: Text('PDF 로드 오류: ${snapshot.error}'));
+          if (snap.hasError) {
+            return Center(child: Text('Error: ${snap.error}'));
           }
-          if (!snapshot.hasData) {
-            return const Center(child: Text('PDF를 불러올 수 없습니다.'));
-          }
-
+          final doc = snap.data!;
           return Row(
             children: [
-              // 1) PDF 뷰어
+              // PDF 영역 + 하단 바를 Column으로 묶음
               Expanded(
                 flex: 3,
-                child: PdfPageViewer(
-                  key: _viewerKey,
-                  document: snapshot.data!,
-                ),
-              ),
-
-              // 2) 사이드바 (Page / Figure)
-              Container(
-                width: 240,
-                decoration: BoxDecoration(
-                  border: Border(
-                    left: BorderSide(color: Theme.of(context).dividerColor),
-                  ),
-                ),
                 child: Column(
                   children: [
-                    // 탭 토글
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ToggleButtons(
-                        isSelected: [
-                          _tabController.index == 0,
-                          _tabController.index == 1
-                        ],
-                        onPressed: (i) => _tabController.animateTo(i),
-                        borderRadius: BorderRadius.circular(8),
-                        selectedBorderColor:
-                        Theme.of(context).colorScheme.primary,
-                        fillColor: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.1),
-                        selectedColor:
-                        Theme.of(context).colorScheme.primary,
-                        color: Colors.grey,
-                        constraints: const BoxConstraints(
-                            minWidth: 100, minHeight: 36),
-                        children: const [
-                          Text('Page'),
-                          Text('Figure'),
-                        ],
+                    // 실제 PDF 뷰어
+                    Expanded(
+                      child: PdfPageViewer(
+                        key: _viewerKey,
+                        document: doc,
+                        // (추후 scale/page 변경 콜백 연결)
                       ),
                     ),
-
-                    // 검색창 및 리스트
-                    Expanded(
-                      child: Column(
+                    // 하단 바
+                    Container(
+                      height: 48,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // 검색바
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: _tabController.index == 0
-                                    ? 'Search Page'
-                                    : 'Search Figure',
-                                prefixIcon: const Icon(Icons.search),
-                                suffixIcon: _searchQuery.isNotEmpty
-                                    ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () =>
-                                      setState(() => _searchQuery = ''),
-                                )
-                                    : null,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 8, horizontal: 12),
-                              ),
-                              onChanged: (v) =>
-                                  setState(() => _searchQuery = v),
-                            ),
-                          ),
-
-                          // Page / Figure 목록
-                          Expanded(
-                            child: _tabController.index == 0
-                            // Page 탭: pageList 기준, 1부터 시작
-                                ? ListView.builder(
-                              itemCount: filteredPages.length,
-                              itemBuilder: (_, idx) {
-                                final page = filteredPages[idx];
-                                return ListTile(
-                                  leading: page
-                                      .thumbnailWidget(width: 80, height: 110),
-                                  title:
-                                  Text('Page ${page.pageIndex}'),
-                                  trailing:
-                                  const Icon(Icons.chevron_right),
-                                  onTap: () {
-                                    _viewerKey.currentState
-                                        ?.jumpToPage(page.pageIndex);
-                                  },
-                                );
-                              },
-                            )
-                            // Figure 탭
-                                : ListView.builder(
-                              itemCount: filteredFigures.length,
-                              itemBuilder: (_, idx) {
-                                final fig = filteredFigures[idx];
-                                return ListTile(
-                                  leading: fig.thumbnailWidget(
-                                      width: 60, height: 60),
-                                  title: Text(
-                                    fig.content,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  subtitle: Text(
-                                    fig.type
-                                        .toString()
-                                        .split('.')
-                                        .last,
-                                  ),
-                                  trailing:
-                                  const Icon(Icons.chevron_right),
-                                  onTap: () {
-                                    _viewerKey.currentState
-                                        ?.jumpToPage(fig.pageIndex);
-                                  },
-                                );
-                              },
-                            ),
+                          // 확대율
+                          Text('${_zoomPercent.toInt()}%', style: Theme.of(context).textTheme.bodyMedium),
+                          // 페이지 표시
+                          Text('$_currentPage / ${_pages.where((p) => p.pageIndex > 0).length}',
+                              style: Theme.of(context).textTheme.bodyLarge),
+                          // 페이지 점프 아이콘
+                          IconButton(
+                            icon: const Icon(Icons.search),
+                            onPressed: _promptPageJump,
                           ),
                         ],
                       ),
@@ -299,6 +206,98 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                   ],
                 ),
               ),
+
+              // 사이드바
+              if (_sidebarVisible)
+                Container(
+                  width: 260,
+                  decoration: BoxDecoration(
+                      border: Border(left: BorderSide(color: Theme.of(context).dividerColor))),
+                  child: Column(
+                    children: [
+                      // 탭 토글
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ToggleButtons(
+                          isSelected: [_tabController.index == 0, _tabController.index == 1],
+                          onPressed: (i) => _tabController.animateTo(i),
+                          borderRadius: BorderRadius.circular(20),
+                          selectedBorderColor: Theme.of(context).colorScheme.primary,
+                          fillColor:
+                          Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          selectedColor: Theme.of(context).colorScheme.primary,
+                          color: Colors.grey,
+                          constraints: const BoxConstraints(minWidth: 100, minHeight: 36),
+                          children: const [Text('Page'), Text('Figure')],
+                        ),
+                      ),
+                      // 리스트 본문
+                      Expanded(
+                        child: _tabController.index == 0
+                            ? ListView.builder(
+                          itemCount: filteredPages.length,
+                          itemBuilder: (_, i) {
+                            final page = filteredPages[i];
+                            return ListTile(
+                              leading: page.thumbnailWidget(width: 60, height: 80),
+                              title: Text('Page ${page.pageIndex}'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () {
+                                _viewerKey.currentState?.jumpToPage(page.pageIndex);
+                                setState(() => _currentPage = page.pageIndex);
+                              },
+                            );
+                          },
+                        )
+                            : ListView.builder(
+                          itemCount: filteredFigures.length,
+                          itemBuilder: (_, i) {
+                            final fig = filteredFigures[i];
+                            return ListTile(
+                              leading:
+                              fig.thumbnailWidget(width: 60, height: 60),
+                              title: Text(
+                                fig.content,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () =>
+                                  _viewerKey.currentState?.jumpToPage(fig.pageIndex),
+                            );
+                          },
+                        ),
+                      ),
+                      // 검색창
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText:
+                            _tabController.index == 0 ? 'Search Page' : 'Search Figure',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () =>
+                                  setState(() => _searchQuery = ''),
+                            )
+                                : null,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 12),
+                          ),
+                          onChanged: (v) => setState(() {
+                            _searchQuery = v;
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           );
         },

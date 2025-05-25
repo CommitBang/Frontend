@@ -10,6 +10,7 @@ part 'page_impl.g.dart';
 @Name('pdf_page')
 class PageModel extends BasePage {
   // ====== DB 필드 ======
+  @override
   Id id = Isar.autoIncrement;
 
   @override

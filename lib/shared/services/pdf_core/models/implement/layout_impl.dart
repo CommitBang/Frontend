@@ -9,6 +9,7 @@ part 'layout_impl.g.dart';
 @Name('pdf_layout')
 class LayoutModel extends BaseLayout {
   // ====== DB 필드 ======
+  @override
   Id id = Isar.autoIncrement;
 
   @override

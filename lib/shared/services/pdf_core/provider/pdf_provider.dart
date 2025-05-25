@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:isar/isar.dart';
 import 'package:snapfig/shared/services/pdf_core/models/models.dart';
 
 // PDF를 관리하는 프로바이더 인터페이스
@@ -10,10 +11,15 @@ abstract class PDFProvider extends ChangeNotifier {
   Future<void> addPDF(String filePath);
 
   /// PDF 삭제
-  Future<void> deletePDF(BasePdf pdf);
+  Future<void> deletePDF(List<BasePdf> pdfs);
 
   /// PDF 정보 업데이트
-  Future<void> updatePDF(BasePdf pdf);
+  Future<void> updatePDF({
+    required Id id,
+    String? name,
+    DateTime? updatedAt,
+    PDFStatus? status,
+  });
 
   /// 쿼리(필터 등)
   Future<List<BasePdf>> queryPDFs({String? keyword, PDFStatus? status});

@@ -50,7 +50,7 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   void _listenDatabase() {
     final stream = _isar.pDFModels.watchLazy();
     _databaseSubscription = stream.listen((_) async {
-      _pdfs = await _isar.pDFModels.where().findAll();
+      _pdfs = await _getAllPdfs();
       _logger.info('PDFs are changed.');
       notifyListeners();
       // OCR 처리 대기 목록 처리
@@ -62,6 +62,10 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
         }
       }
     });
+  }
+
+  Future<List<PDFModel>> _getAllPdfs() async {
+    return await _isar.pDFModels.where().sortByUpdatedAt().findAll();
   }
 
   Future<List<PDFModel>> _getPendingPdfs() async {
@@ -167,11 +171,17 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   }
 
   @override
-  Future<List<BasePdf>> queryPDFs({String? keyword, PDFStatus? status}) async {
+  Future<List<BasePdf>> queryPDFs({
+    String? keyword,
+    PDFStatus? status,
+    int? limit,
+  }) async {
     var query = _isar.pDFModels
         .filter()
         .optional(keyword != null, (q) => q.nameContains(keyword!))
-        .optional(status != null, (q) => q.statusEqualTo(status!));
+        .optional(status != null, (q) => q.statusEqualTo(status!))
+        .sortByUpdatedAt()
+        .optional(limit != null, (q) => q.limit(limit!));
     return await query.findAll();
   }
 

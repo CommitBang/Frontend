@@ -22,5 +22,9 @@ abstract class PDFProvider extends ChangeNotifier {
   });
 
   /// 쿼리(필터 등)
-  Future<List<BasePdf>> queryPDFs({String? keyword, PDFStatus? status});
+  Future<List<BasePdf>> queryPDFs({
+    String? keyword,
+    PDFStatus? status,
+    int? limit,
+  });
 }

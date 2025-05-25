@@ -67,7 +67,7 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   Future<List<PDFModel>> _getAllPdfs() async {
     return await _isar.pDFModels.where().sortByUpdatedAt().findAll();
   }
-
+  
   Future<List<PDFModel>> _getPendingPdfs() async {
     return await _isar.pDFModels
         .filter()

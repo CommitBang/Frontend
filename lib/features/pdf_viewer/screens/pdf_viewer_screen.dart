@@ -28,17 +28,19 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
   List<String> _recentPaths = [];
   List<PdfPageModel> _pages = [];
   List<PdfLayoutModel> _figures = [];
-
   String _searchQuery = '';
   bool _sidebarVisible = true;
 
-  // 하단바 상태
   double _zoomPercent = 100;
   int _currentPage = 1;
+  String _pdfTitle = 'PDF Viewer';
 
   @override
   void initState() {
     super.initState();
+    // FutureBuilder에 사용할 Future 초기화
+    _pdfFuture = PdfService.instance.loadPdfFromAsset('assets/sample_ocr_test.pdf');
+
     _tabController = TabController(length: 2, vsync: this, initialIndex: 0)
       ..addListener(() => setState(() {}));
 
@@ -69,6 +71,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
           .toList();
       _currentPage = 1;
       _zoomPercent = 100;
+      _pdfTitle = model.name;
     });
   }
 
@@ -150,7 +153,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PDF Viewer'),
+        title: Text(_pdfTitle),
         leading: IconButton(
           icon: Icon(_sidebarVisible ? Icons.chevron_right : Icons.chevron_left),
           onPressed: () => setState(() => _sidebarVisible = !_sidebarVisible),
@@ -172,7 +175,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
           final doc = snap.data!;
           return Row(
             children: [
-              // 메인 뷰어 + 하단바
               Expanded(
                 flex: 3,
                 child: Column(
@@ -181,12 +183,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                       child: PdfPageViewer(
                         key: _viewerKey,
                         document: doc,
-                        onScaleChanged: (scale) {
-                          setState(() => _zoomPercent = (scale * 100).roundToDouble());
-                        },
-                        onPageChanged: (page) {
-                          setState(() => _currentPage = page);
-                        },
+                        onScaleChanged: (scale) =>
+                            setState(() => _zoomPercent = (scale * 100).roundToDouble()),
+                        onPageChanged: (page) =>
+                            setState(() => _currentPage = page),
                       ),
                     ),
                     Container(
@@ -196,17 +196,24 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('${_zoomPercent.toInt()}%', style: Theme.of(context).textTheme.bodyMedium),
-                          Text('$_currentPage / ${pageList.length}', style: Theme.of(context).textTheme.bodyLarge),
-                          IconButton(icon: const Icon(Icons.search), onPressed: _promptPageJump),
+                          Text('${_zoomPercent.toInt()}%',
+                              style: Theme.of(context).textTheme.bodyMedium),
+                          Text('$_currentPage / ${pageList.length}',
+                              style: Theme.of(context).textTheme.bodyLarge),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: _promptPageJump,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: const Icon(Icons.search),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
               ),
-
-              // 사이드바
               if (_sidebarVisible)
                 Container(
                   width: 260,
@@ -222,10 +229,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                           onPressed: (i) => _tabController.animateTo(i),
                           borderRadius: BorderRadius.circular(20),
                           selectedBorderColor: Theme.of(context).colorScheme.primary,
-                          fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          fillColor:
+                          Theme.of(context).colorScheme.primary.withOpacity(0.1),
                           selectedColor: Theme.of(context).colorScheme.primary,
                           color: Colors.grey,
-                          constraints: const BoxConstraints(minWidth: 100, minHeight: 36),
+                          constraints:
+                          const BoxConstraints(minWidth: 100, minHeight: 36),
                           children: const [Text('Page'), Text('Figure')],
                         ),
                       ),
@@ -240,8 +249,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                               title: Text('Page ${page.pageIndex}'),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () {
-                                _viewerKey.currentState?.jumpToPage(page.pageIndex);
-                                setState(() => _currentPage = page.pageIndex);
+                                _viewerKey.currentState
+                                    ?.jumpToPage(page.pageIndex);
+                                setState(
+                                        () => _currentPage = page.pageIndex);
                               },
                             );
                           },
@@ -251,14 +262,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                           itemBuilder: (_, idx) {
                             final fig = filteredFigures[idx];
                             return ListTile(
-                              leading: fig.thumbnailWidget(width: 60, height: 60),
+                              leading:
+                              fig.thumbnailWidget(width: 60, height: 60),
                               title: Text(
                                 fig.content,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () => _viewerKey.currentState?.jumpToPage(fig.pageIndex),
+                              trailing:
+                              const Icon(Icons.chevron_right),
+                              onTap: () => _viewerKey.currentState
+                                  ?.jumpToPage(fig.pageIndex),
                             );
                           },
                         ),
@@ -267,19 +281,23 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                         padding: const EdgeInsets.all(8.0),
                         child: TextField(
                           decoration: InputDecoration(
-                            hintText: _tabController.index == 0 ? 'Search Page' : 'Search Figure',
+                            hintText: _tabController.index == 0
+                                ? 'Search Page'
+                                : 'Search Figure',
                             prefixIcon: const Icon(Icons.search),
                             suffixIcon: _searchQuery.isNotEmpty
                                 ? IconButton(
                               icon: const Icon(Icons.clear),
-                              onPressed: () => setState(() => _searchQuery = ''),
+                              onPressed: () =>
+                                  setState(() => _searchQuery = ''),
                             )
                                 : null,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 12),
                           ),
                           onChanged: (v) => setState(() => _searchQuery = v),
                         ),

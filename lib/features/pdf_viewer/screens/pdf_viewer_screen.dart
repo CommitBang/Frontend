@@ -28,10 +28,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
   List<String> _recentPaths = [];
   List<PdfPageModel> _pages = [];
   List<PdfLayoutModel> _figures = [];
+
   String _searchQuery = '';
   bool _sidebarVisible = true;
 
-  // 임시 상태: 확대율 및 현재 페이지
+  // 하단바 상태
   double _zoomPercent = 100;
   int _currentPage = 1;
 
@@ -44,7 +45,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     _loadPdf(path: 'assets/sample_ocr_test.pdf', isAsset: true);
   }
 
-  Future<void> _loadPdf({required String path, required bool isAsset}) async {
+  Future<void> _loadPdf({
+    required String path,
+    required bool isAsset,
+  }) async {
     final doc = isAsset
         ? await PdfService.instance.loadPdfFromAsset(path)
         : await PdfService.instance.loadPdfFromFile(File(path));
@@ -74,8 +78,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
       allowedExtensions: ['pdf'],
     );
     if (result != null && result.files.single.path != null) {
-      final pth = result.files.single.path!;
-      await _loadPdf(path: pth, isAsset: false);
+      await _loadPdf(path: result.files.single.path!, isAsset: false);
     }
   }
 
@@ -122,7 +125,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     );
     if (input != null && input.isNotEmpty) {
       final num = int.tryParse(input);
-      if (num != null && num > 0 && num <= _pages.length - 1) {
+      if (num != null && num > 0 && num < _pages.length) {
         _viewerKey.currentState?.jumpToPage(num);
         setState(() => _currentPage = num);
       }
@@ -137,10 +140,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
 
   @override
   Widget build(BuildContext context) {
-    final filteredPages = _pages
-        .where((p) => p.pageIndex > 0 && p.pageIndex.toString().contains(_searchQuery))
+    final pageList = _pages.where((p) => p.pageIndex > 0).toList();
+    final filteredPages = pageList
+        .where((p) => p.pageIndex.toString().contains(_searchQuery))
         .toList();
-
     final filteredFigures = _figures
         .where((f) => f.content.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
@@ -169,20 +172,23 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
           final doc = snap.data!;
           return Row(
             children: [
-              // PDF 영역 + 하단 바를 Column으로 묶음
+              // 메인 뷰어 + 하단바
               Expanded(
                 flex: 3,
                 child: Column(
                   children: [
-                    // 실제 PDF 뷰어
                     Expanded(
                       child: PdfPageViewer(
                         key: _viewerKey,
                         document: doc,
-                        // (추후 scale/page 변경 콜백 연결)
+                        onScaleChanged: (scale) {
+                          setState(() => _zoomPercent = (scale * 100).roundToDouble());
+                        },
+                        onPageChanged: (page) {
+                          setState(() => _currentPage = page);
+                        },
                       ),
                     ),
-                    // 하단 바
                     Container(
                       height: 48,
                       color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -190,16 +196,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // 확대율
                           Text('${_zoomPercent.toInt()}%', style: Theme.of(context).textTheme.bodyMedium),
-                          // 페이지 표시
-                          Text('$_currentPage / ${_pages.where((p) => p.pageIndex > 0).length}',
-                              style: Theme.of(context).textTheme.bodyLarge),
-                          // 페이지 점프 아이콘
-                          IconButton(
-                            icon: const Icon(Icons.search),
-                            onPressed: _promptPageJump,
-                          ),
+                          Text('$_currentPage / ${pageList.length}', style: Theme.of(context).textTheme.bodyLarge),
+                          IconButton(icon: const Icon(Icons.search), onPressed: _promptPageJump),
                         ],
                       ),
                     ),
@@ -212,10 +211,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                 Container(
                   width: 260,
                   decoration: BoxDecoration(
-                      border: Border(left: BorderSide(color: Theme.of(context).dividerColor))),
+                    border: Border(left: BorderSide(color: Theme.of(context).dividerColor)),
+                  ),
                   child: Column(
                     children: [
-                      // 탭 토글
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: ToggleButtons(
@@ -223,21 +222,19 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                           onPressed: (i) => _tabController.animateTo(i),
                           borderRadius: BorderRadius.circular(20),
                           selectedBorderColor: Theme.of(context).colorScheme.primary,
-                          fillColor:
-                          Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                           selectedColor: Theme.of(context).colorScheme.primary,
                           color: Colors.grey,
                           constraints: const BoxConstraints(minWidth: 100, minHeight: 36),
                           children: const [Text('Page'), Text('Figure')],
                         ),
                       ),
-                      // 리스트 본문
                       Expanded(
                         child: _tabController.index == 0
                             ? ListView.builder(
                           itemCount: filteredPages.length,
-                          itemBuilder: (_, i) {
-                            final page = filteredPages[i];
+                          itemBuilder: (_, idx) {
+                            final page = filteredPages[idx];
                             return ListTile(
                               leading: page.thumbnailWidget(width: 60, height: 80),
                               title: Text('Page ${page.pageIndex}'),
@@ -251,48 +248,40 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                         )
                             : ListView.builder(
                           itemCount: filteredFigures.length,
-                          itemBuilder: (_, i) {
-                            final fig = filteredFigures[i];
+                          itemBuilder: (_, idx) {
+                            final fig = filteredFigures[idx];
                             return ListTile(
-                              leading:
-                              fig.thumbnailWidget(width: 60, height: 60),
+                              leading: fig.thumbnailWidget(width: 60, height: 60),
                               title: Text(
                                 fig.content,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               trailing: const Icon(Icons.chevron_right),
-                              onTap: () =>
-                                  _viewerKey.currentState?.jumpToPage(fig.pageIndex),
+                              onTap: () => _viewerKey.currentState?.jumpToPage(fig.pageIndex),
                             );
                           },
                         ),
                       ),
-                      // 검색창
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: TextField(
                           decoration: InputDecoration(
-                            hintText:
-                            _tabController.index == 0 ? 'Search Page' : 'Search Figure',
+                            hintText: _tabController.index == 0 ? 'Search Page' : 'Search Figure',
                             prefixIcon: const Icon(Icons.search),
                             suffixIcon: _searchQuery.isNotEmpty
                                 ? IconButton(
                               icon: const Icon(Icons.clear),
-                              onPressed: () =>
-                                  setState(() => _searchQuery = ''),
+                              onPressed: () => setState(() => _searchQuery = ''),
                             )
                                 : null,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 12),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                           ),
-                          onChanged: (v) => setState(() {
-                            _searchQuery = v;
-                          }),
+                          onChanged: (v) => setState(() => _searchQuery = v),
                         ),
                       ),
                     ],

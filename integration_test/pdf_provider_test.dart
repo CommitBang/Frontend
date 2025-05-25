@@ -3,16 +3,15 @@ import 'dart:io';
 import 'package:snapfig/shared/services/ocr_core/ocr_core.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:path/path.dart' as p;
-import 'package:isar/isar.dart';
+import 'package:path/path.dart' as path_lib;
 
 /// assetPath: 예) 'test/unit/assets/test.pdf'
 /// 반환: 내부 저장소에 복사된 파일의 경로
 Future<String> copyAssetToLocal(String assetPath) async {
   final byteData = await rootBundle.load(assetPath);
   final tempDir = await Directory.systemTemp.createTemp('test_pdf_');
-  final fileName = p.basename(assetPath);
-  final file = File(p.join(tempDir.path, fileName));
+  final fileName = path_lib.basename(assetPath);
+  final file = File(path_lib.join(tempDir.path, fileName));
   await file.writeAsBytes(byteData.buffer.asUint8List());
   return file.path;
 }

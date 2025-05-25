@@ -40,9 +40,11 @@ jobs:
     - name: Run integration tests
       uses: ReactiveCircus/android-emulator-runner@v2
       with:
-        api-level: 33
+        api-level: 34
         target: google_apis
         arch: x86_64
         profile: Nexus 6
+        emulator-options: -no-boot-anim
+        disable-animations: true
         script: |
           flutter test --coverage integration_test/

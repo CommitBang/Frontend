@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:isar/isar.dart';
+
 import 'base_page.dart';
 
 enum PDFStatus {
@@ -16,6 +19,9 @@ enum PDFStatus {
 
 // PDF 데이터 모델 인터페이스
 abstract class BasePdf {
+  // 고유 식별자
+  Id get id;
+
   // 파일 이름
   String get name;
 
@@ -37,6 +43,9 @@ abstract class BasePdf {
   // 파일 상태
   PDFStatus get status;
 
+  // 썸네일 이미지
+  Future<Uint8List?> getThumbnail();
+
   // 페이지 목록
-  List<BasePage> getPages();
+  Future<List<BasePage>> getPages();
 }

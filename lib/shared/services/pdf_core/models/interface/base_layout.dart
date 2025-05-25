@@ -1,3 +1,5 @@
+// base_layout.dart
+
 import 'package:flutter/services.dart';
 
 enum LayoutType { formula, text, number, header, algorithm }

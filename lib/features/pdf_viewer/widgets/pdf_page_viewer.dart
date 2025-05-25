@@ -1,5 +1,3 @@
-// lib/features/pdf_viewer/widgets/pdf_page_viewer.dart
-
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
@@ -8,17 +6,21 @@ import 'package:vector_math/vector_math_64.dart' as vm;
 /// - 수직 스크롤
 /// - 핀치 제스처 확대/축소
 /// - 외부에서 페이지 점프 기능 제공
+/// - 확대율 변경 콜백
 class PdfPageViewer extends StatefulWidget {
   final PdfDocument document;
+  final ValueChanged<double>? onScaleChanged;
+  final ValueChanged<int>? onPageChanged;
 
-  // super.key 축약 문법 사용
-  const PdfPageViewer({super.key, required this.document});
+  const PdfPageViewer({
+    super.key,
+    required this.document,
+    this.onScaleChanged,
+    this.onPageChanged,
+  });
 
-  /// 다른 위젯에서 페이지 점프 메서드를 호출할 때 사용합니다.
-  /// public State 클래스(PdfPageViewerState)를 반환하도록 변경했습니다.
-  static PdfPageViewerState? of(BuildContext context) {
-    return context.findAncestorStateOfType<PdfPageViewerState>();
-  }
+  static PdfPageViewerState? of(BuildContext context) =>
+      context.findAncestorStateOfType<PdfPageViewerState>();
 
   @override
   PdfPageViewerState createState() => PdfPageViewerState();
@@ -38,8 +40,10 @@ class PdfPageViewerState extends State<PdfPageViewer> {
   @override
   void initState() {
     super.initState();
-    // 1번 페이지부터 시작
-    _pageController = PageController(initialPage: 1);
+    _pageController = PageController(initialPage: 1)
+      ..addListener(() {
+        widget.onPageChanged?.call(_pageController.page?.round() ?? 1);
+      });
     _transformationController = TransformationController();
     _lastTranslate = vm.Vector3.zero();
   }
@@ -51,9 +55,12 @@ class PdfPageViewerState extends State<PdfPageViewer> {
     super.dispose();
   }
 
-  /// 외부에서 호출 가능한 메서드: 특정 페이지로 즉시 이동
   void jumpToPage(int pageIndex) {
     _pageController.jumpToPage(pageIndex);
+  }
+
+  void _notifyScale() {
+    widget.onScaleChanged?.call(_currentScale);
   }
 
   void _zoomIn() {
@@ -64,6 +71,7 @@ class PdfPageViewerState extends State<PdfPageViewer> {
       _transformationController.value = Matrix4.identity()
         ..translate(_lastTranslate.x, _lastTranslate.y)
         ..scale(_currentScale);
+      _notifyScale();
     });
   }
 
@@ -75,13 +83,15 @@ class PdfPageViewerState extends State<PdfPageViewer> {
       _transformationController.value = Matrix4.identity()
         ..translate(_lastTranslate.x, _lastTranslate.y)
         ..scale(_currentScale);
+      _notifyScale();
     });
   }
 
   void _resetAlignment() {
     setState(() {
-      _transformationController.value = Matrix4.identity()
-        ..scale(_currentScale);
+      _transformationController.value =
+      Matrix4.identity()..scale(_currentScale);
+      _notifyScale();
     });
   }
 
@@ -105,7 +115,6 @@ class PdfPageViewerState extends State<PdfPageViewer> {
 
     return Stack(
       children: [
-        // 수직 스크롤 가능한 페이지 뷰
         PageView.builder(
           controller: _pageController,
           scrollDirection: Axis.vertical,
@@ -121,6 +130,7 @@ class PdfPageViewerState extends State<PdfPageViewer> {
                   scaleEnabled: true,
                   minScale: _minScale,
                   maxScale: _maxScale,
+                  onInteractionEnd: (_) => _notifyScale(),
                   child: SizedBox(
                     width: constraints.maxWidth,
                     height: constraints.maxHeight,
@@ -147,7 +157,6 @@ class PdfPageViewerState extends State<PdfPageViewer> {
           },
         ),
 
-        // 컨트롤 버튼들 (Zoom, Reset, Fit)
         Positioned(
           top: 16,
           right: 16,

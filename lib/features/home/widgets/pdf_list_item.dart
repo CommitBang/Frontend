@@ -61,13 +61,20 @@ class PdfListItem extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle:
-          pdfData.status == PDFStatus.completed
-              ? _PDFMetadata(
-                totalPages: pdfData.totalPages,
-                updatedAt: pdfData.updatedAt,
-              )
-              : _OCRProgressBar(status: pdfData.status),
+      subtitle: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        child:
+            pdfData.status == PDFStatus.completed
+                ? _PDFMetadata(
+                  totalPages: pdfData.totalPages,
+                  updatedAt: pdfData.updatedAt,
+                  key: const ValueKey('metadata'),
+                )
+                : _OCRProgressBar(
+                  status: pdfData.status,
+                  key: const ValueKey('progress'),
+                ),
+      ),
     );
   }
 }
@@ -123,7 +130,11 @@ class _PDFMetadata extends StatelessWidget {
   final int totalPages;
   final DateTime updatedAt;
 
-  const _PDFMetadata({required this.totalPages, required this.updatedAt});
+  const _PDFMetadata({
+    super.key,
+    required this.totalPages,
+    required this.updatedAt,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +154,7 @@ class _PDFMetadata extends StatelessWidget {
 class _OCRProgressBar extends StatelessWidget {
   final PDFStatus status;
 
-  const _OCRProgressBar({required this.status});
+  const _OCRProgressBar({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -171,16 +182,22 @@ class _OCRProgressBar extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 5,
-            backgroundColor: theme.colorScheme.secondaryContainer,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              theme.colorScheme.primary,
-            ),
-          ),
+        TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: progress),
+          duration: const Duration(milliseconds: 400),
+          builder: (context, value, child) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: value,
+                minHeight: 5,
+                backgroundColor: theme.colorScheme.secondaryContainer,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  theme.colorScheme.primary,
+                ),
+              ),
+            );
+          },
         ),
       ],
     );

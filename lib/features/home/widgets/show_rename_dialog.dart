@@ -10,8 +10,13 @@ void showRenameDialog(
   await showDialog(
     context: context,
     builder: (dialogContext) {
+      final theme = Theme.of(dialogContext);
       return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: const Text('문서 이름 변경'),
+        titleTextStyle: theme.textTheme.headlineSmall?.copyWith(
+          color: theme.colorScheme.onSurface,
+        ),
         content: TextField(
           controller: textEditController,
           decoration: const InputDecoration(hintText: '문서 이름을 입력하세요'),

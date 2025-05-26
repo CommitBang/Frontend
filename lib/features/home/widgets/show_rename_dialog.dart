@@ -37,5 +37,4 @@ void showRenameDialog(
       );
     },
   );
-  textEditController.dispose();
 }

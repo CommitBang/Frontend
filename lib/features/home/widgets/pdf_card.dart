@@ -128,7 +128,11 @@ class _PDFMetadata extends StatelessWidget {
             opacity: showActions ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
-            child: _PdfCardActions(onEdit: onEdit, onOpen: onOpen),
+            child: _PdfCardActions(
+              onEdit: onEdit,
+              onOpen: onOpen,
+              status: pdfData.status,
+            ),
           ),
         ],
       ),
@@ -180,8 +184,29 @@ class _PdfTextContent extends StatelessWidget {
 class _PdfCardActions extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onOpen;
+  final PDFStatus status;
 
-  const _PdfCardActions({required this.onEdit, required this.onOpen});
+  const _PdfCardActions({
+    required this.onEdit,
+    required this.onOpen,
+    required this.status,
+  });
+
+  void _showCantOpenSnackBar(BuildContext context) {
+    final theme = Theme.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '처리가 완료되지 않은 문서는 열 수 없습니다.',
+          style: appTextTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onErrorContainer,
+          ),
+        ),
+        backgroundColor: theme.colorScheme.errorContainer,
+        closeIconColor: theme.colorScheme.onErrorContainer,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,12 +233,17 @@ class _PdfCardActions extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
+              disabledBackgroundColor: theme.colorScheme.surfaceDim,
+              disabledForegroundColor: theme.colorScheme.onSecondaryContainer,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(100),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
             ),
-            onPressed: onOpen,
+            onPressed:
+                status == PDFStatus.completed
+                    ? onOpen
+                    : () => _showCantOpenSnackBar(context),
             child: const Text('열기'),
           ),
         ],

@@ -92,7 +92,7 @@ class PDFModel extends BasePdf {
     _name = name ?? _name;
     _updatedAt = updatedAt ?? _updatedAt;
     _status = status ?? _status;
-    this.thumbnail = thumbnail;
+    this.thumbnail = thumbnail ?? this.thumbnail;
     this.totalPages = totalPages ?? this.totalPages;
   }
 }

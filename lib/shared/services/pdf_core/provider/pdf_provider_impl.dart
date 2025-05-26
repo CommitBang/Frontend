@@ -48,7 +48,7 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   }
 
   void _listenDatabase() {
-    final stream = _isar.pDFModels.watchLazy();
+    final stream = _isar.pDFModels.watchLazy(fireImmediately: true);
     _databaseSubscription = stream.listen((_) async {
       _pdfs = await _getAllPdfs();
       _logger.info('PDFs are changed.');
@@ -67,7 +67,7 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   Future<List<PDFModel>> _getAllPdfs() async {
     return await _isar.pDFModels.where().sortByUpdatedAt().findAll();
   }
-  
+
   Future<List<PDFModel>> _getPendingPdfs() async {
     return await _isar.pDFModels
         .filter()

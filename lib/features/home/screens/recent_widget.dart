@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:snapfig/features/home/screens/dummy_pdf.dart';
 import 'package:snapfig/features/home/widgets/home_components.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
 
@@ -13,16 +12,29 @@ class RecentWidget extends StatefulWidget {
 }
 
 class _RecentWidgetState extends State<RecentWidget> {
-  // 샘플 PDF 데이터
-  List<BasePdf> get samplePdfs => List.generate(13, (i) => DummyPdf(index: i));
   static const int _maxRecentPdfs = 5;
+  late final PDFProvider _pdfProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pdfProvider = InheritedPDFProviderWidget.of(context).provider;
+    _pdfProvider.addListener(_onPDFsChanged);
+  }
+
+  @override
+  void dispose() {
+    _pdfProvider.removeListener(_onPDFsChanged);
+    super.dispose();
+  }
+
+  void _onPDFsChanged() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
-    final pdfProvider = InheritedPDFProviderWidget.of(context).provider;
     return Scaffold(
       body: FutureBuilder(
-        future: pdfProvider.queryPDFs(limit: 13),
+        future: _pdfProvider.queryPDFs(limit: 13),
         builder:
             (context, snapshot) =>
                 snapshot.hasData

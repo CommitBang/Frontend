@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:snapfig/features/home/screens/dummy_pdf.dart';
 import 'package:snapfig/features/home/widgets/home_components.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
 
@@ -13,9 +12,22 @@ class DocumentsWidget extends StatefulWidget {
 }
 
 class _DocumentsWidgetState extends State<DocumentsWidget> {
-  final List<BasePdf> pdfs = List.generate(10, (i) => DummyPdf(index: i));
   final List<BasePdf> _selectedPdfs = [];
   bool _isEditing = false;
+  late final PDFProvider _pdfProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pdfProvider = InheritedPDFProviderWidget.of(context).provider;
+    _pdfProvider.addListener(_onPDFsChanged);
+  }
+
+  @override
+  void dispose() {
+    _pdfProvider.removeListener(_onPDFsChanged);
+    super.dispose();
+  }
 
   void _toggleEditing() {
     setState(() {
@@ -40,10 +52,14 @@ class _DocumentsWidgetState extends State<DocumentsWidget> {
     });
   }
 
+  /// PDF 목록이 변경되었을 때 호출되는 함수
+  void _onPDFsChanged() => setState(() {
+    debugPrint('PDFs are changed.');
+  });
+
   @override
   Widget build(BuildContext context) {
-    final pdfProvider = InheritedPDFProviderWidget.of(context).provider;
-    final pdfs = pdfProvider.pdfs;
+    final pdfs = _pdfProvider.pdfs;
     final isEmpty = pdfs.isEmpty;
     return Scaffold(
       body: Stack(

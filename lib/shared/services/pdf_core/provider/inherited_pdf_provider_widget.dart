@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:snapfig/shared/services/pdf_core/provider/pdf_provider.dart';
 
-class InheritedPDFProviderWidget extends InheritedWidget {
+class InheritedPDFProviderWidget extends InheritedNotifier<PDFProvider> {
   final PDFProvider provider;
 
   const InheritedPDFProviderWidget({

@@ -11,6 +11,13 @@ import 'package:pdfrx/pdfrx.dart';
 import 'package:logging/logging.dart';
 import 'dart:isolate';
 
+class _PDFInfo {
+  final int totalPages;
+  final List<int>? thumbnail;
+
+  _PDFInfo({required this.totalPages, this.thumbnail});
+}
+
 class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   late final Isar _isar;
   final OCR _ocrProvider;
@@ -123,6 +130,19 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
     throw UnimplementedError();
   }
 
+  Future<_PDFInfo> _getPDFInfo(String filePath) async {
+    final data = await PdfDocument.openFile(filePath);
+    try {
+      final thumbnail = await renderPageToPngBytes(data.pages.first);
+      return _PDFInfo(totalPages: data.pages.length, thumbnail: thumbnail);
+    } catch (e) {
+      _logger.severe('Failed to get PDF info: $e');
+      return _PDFInfo(totalPages: 0, thumbnail: null);
+    } finally {
+      await data.dispose();
+    }
+  }
+
   Future<Uint8List?> renderPageToPngBytes(PdfPage page) async {
     final thumbnailData = await page.render(
       width: page.width.toInt(),
@@ -137,25 +157,26 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
 
   @override
   Future<void> addPDF(String filePath) async {
-    final pdfInfo = await PdfDocument.openFile(filePath);
     try {
-      final page = pdfInfo.pages.first;
-      final thumbnail = await renderPageToPngBytes(page);
       final pdf = PDFModel.create(
         name: path_lib.basenameWithoutExtension(filePath),
         path: filePath,
         createdAt: DateTime.now(),
-        totalPages: pdfInfo.pages.length,
+        totalPages: 0,
         status: PDFStatus.pending,
-        thumbnail: thumbnail,
+        thumbnail: null,
       );
       await _isar.writeTxn(() async {
         await _isar.pDFModels.put(pdf);
       });
+      final pdfInfo = await _getPDFInfo(filePath);
+      await updatePDF(
+        id: pdf.id,
+        thumbnail: pdfInfo.thumbnail,
+        totalPages: pdfInfo.totalPages,
+      );
     } catch (e) {
       _logger.severe('Failed to add PDF: $e');
-    } finally {
-      await pdfInfo.dispose();
     }
   }
 
@@ -172,6 +193,8 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
     String? name,
     DateTime? updatedAt,
     PDFStatus? status,
+    List<int>? thumbnail,
+    int? totalPages,
   }) async {
     await _isar.writeTxn(() async {
       try {
@@ -180,7 +203,13 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
           _logger.severe('PDF not found: $id');
           return;
         }
-        pdf.update(name: name, updatedAt: updatedAt, status: status);
+        pdf.update(
+          name: name,
+          updatedAt: updatedAt,
+          status: status,
+          thumbnail: thumbnail,
+          totalPages: totalPages,
+        );
         await _isar.pDFModels.put(pdf);
       } catch (e) {
         _logger.severe('Failed to update PDF: $e');

@@ -25,7 +25,7 @@ class PDFModel extends BasePdf {
 
   @Name('total_pages')
   @override
-  final int totalPages;
+  int totalPages;
 
   @override
   List<int>? thumbnail;
@@ -82,9 +82,17 @@ class PDFModel extends BasePdf {
   @override
   Future<List<PageModel>> getPages() async => [];
 
-  void update({String? name, DateTime? updatedAt, PDFStatus? status}) {
+  void update({
+    String? name,
+    DateTime? updatedAt,
+    PDFStatus? status,
+    List<int>? thumbnail,
+    int? totalPages,
+  }) {
     _name = name ?? _name;
     _updatedAt = updatedAt ?? _updatedAt;
     _status = status ?? _status;
+    this.thumbnail = thumbnail;
+    this.totalPages = totalPages ?? this.totalPages;
   }
 }

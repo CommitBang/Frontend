@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:snapfig/shared/services/pdf_core/models/models.dart';
 import 'package:snapfig/core/theme/theme.dart';
 import 'package:intl/intl.dart';
@@ -39,7 +40,7 @@ class PdfCard extends StatelessWidget {
           color: theme.colorScheme.surface,
           child: Stack(
             children: [
-              const Positioned.fill(child: _PdfThumbnail()),
+              _PdfThumbnail(thumbnail: pdfData.thumbnail),
               AnimatedOpacity(
                 opacity: infoOpacity,
                 duration: const Duration(milliseconds: 200),
@@ -63,16 +64,34 @@ class PdfCard extends StatelessWidget {
 }
 
 class _PdfThumbnail extends StatelessWidget {
-  const _PdfThumbnail();
+  final List<int>? thumbnail;
+  const _PdfThumbnail({this.thumbnail});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: theme.colorScheme.surfaceContainerHighest,
       ),
-      child: const Center(
-        child: Icon(Icons.picture_as_pdf, size: 48, color: Color(0xFF898989)),
+      child: Center(
+        child:
+            thumbnail != null
+                ? Image.memory(
+                  Uint8List.fromList(thumbnail!),
+                  fit: BoxFit.fill,
+                  errorBuilder:
+                      (context, error, stackTrace) => Icon(
+                        Icons.picture_as_pdf,
+                        size: 48,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                )
+                : Icon(
+                  Icons.picture_as_pdf,
+                  size: 48,
+                  color: theme.colorScheme.onSurface,
+                ),
       ),
     );
   }

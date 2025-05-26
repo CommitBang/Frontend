@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:isar/isar.dart';
 import 'package:snapfig/shared/services/ocr_core/ocr_core.dart';
 import 'package:snapfig/shared/services/pdf_core/models/models.dart';
 import 'package:snapfig/shared/services/pdf_core/provider/pdf_provider.dart';
+import 'package:path/path.dart' as path_lib;
 import 'package:pdfrx/pdfrx.dart';
 import 'package:logging/logging.dart';
 import 'dart:isolate';
@@ -120,16 +123,31 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
     throw UnimplementedError();
   }
 
+  Future<Uint8List?> renderPageToPngBytes(PdfPage page) async {
+    final thumbnailData = await page.render(
+      width: page.width.toInt(),
+      height: page.height.toInt(),
+    );
+    final thumbnailImg = await thumbnailData?.createImage();
+    final thumbnailBytes = await thumbnailImg?.toByteData(
+      format: ImageByteFormat.png,
+    );
+    return thumbnailBytes?.buffer.asUint8List();
+  }
+
   @override
   Future<void> addPDF(String filePath) async {
     final pdfInfo = await PdfDocument.openFile(filePath);
     try {
+      final page = pdfInfo.pages.first;
+      final thumbnail = await renderPageToPngBytes(page);
       final pdf = PDFModel.create(
-        name: pdfInfo.sourceName,
+        name: path_lib.basenameWithoutExtension(filePath),
         path: filePath,
         createdAt: DateTime.now(),
         totalPages: pdfInfo.pages.length,
         status: PDFStatus.pending,
+        thumbnail: thumbnail,
       );
       await _isar.writeTxn(() async {
         await _isar.pDFModels.put(pdf);

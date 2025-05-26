@@ -52,10 +52,14 @@ class _DocumentsWidgetState extends State<DocumentsWidget> {
     });
   }
 
+  void _onDelete() {
+    _pdfProvider.deletePDF(_selectedPdfs);
+    _isEditing = false;
+    setState(() {});
+  }
+
   /// PDF 목록이 변경되었을 때 호출되는 함수
-  void _onPDFsChanged() => setState(() {
-    debugPrint('PDFs are changed.');
-  });
+  void _onPDFsChanged() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +103,7 @@ class _DocumentsWidgetState extends State<DocumentsWidget> {
                 ? _DocumentsEditBottomBar(
                   key: const ValueKey('bottom-bar'),
                   selectedCount: _selectedPdfs.length,
-                  onDelete: () {},
+                  onDelete: _onDelete,
                   onCancel: _onCancel,
                 )
                 : const SizedBox.shrink(key: ValueKey('empty-bar')),

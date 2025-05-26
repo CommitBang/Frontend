@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:isar/isar.dart';
 
 import 'base_page.dart';
@@ -44,7 +43,7 @@ abstract class BasePdf {
   PDFStatus get status;
 
   // 썸네일 이미지
-  Future<Uint8List?> getThumbnail();
+  List<int>? get thumbnail;
 
   // 페이지 목록
   Future<List<BasePage>> getPages();

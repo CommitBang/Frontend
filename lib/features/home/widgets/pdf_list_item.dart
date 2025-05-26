@@ -39,17 +39,7 @@ class PdfListItem extends StatelessWidget {
                 icon: const Icon(Icons.edit_outlined),
               ),
       leading: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        transitionBuilder: (child, animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: SizeTransition(
-              sizeFactor: animation,
-              axis: Axis.horizontal,
-              child: child,
-            ),
-          );
-        },
+        duration: const Duration(milliseconds: 400),
         child:
             isEditing
                 ? Checkbox(
@@ -98,26 +88,32 @@ class _Thumbnail extends StatelessWidget {
         color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Center(
-        child:
-            thumbnail != null
-                ? Image.memory(
-                  Uint8List.fromList(thumbnail!),
-                  fit: BoxFit.cover,
-                  width: _size,
-                  height: _size,
-                  errorBuilder:
-                      (context, error, stackTrace) => Icon(
-                        Icons.picture_as_pdf,
-                        size: 32,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                )
-                : Icon(
-                  Icons.picture_as_pdf,
-                  size: 32,
-                  color: theme.colorScheme.onSurface,
-                ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          child:
+              thumbnail != null
+                  ? Image.memory(
+                    Uint8List.fromList(thumbnail!),
+                    key: const ValueKey('thumbnail'),
+                    fit: BoxFit.cover,
+                    width: _size,
+                    height: _size,
+                    errorBuilder:
+                        (context, error, stackTrace) => Icon(
+                          Icons.picture_as_pdf,
+                          size: 32,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                  )
+                  : Icon(
+                    Icons.picture_as_pdf,
+                    key: const ValueKey('pdf_icon'),
+                    size: 32,
+                    color: theme.colorScheme.onSurface,
+                  ),
+        ),
       ),
     );
   }

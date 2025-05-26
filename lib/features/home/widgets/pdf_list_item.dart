@@ -9,6 +9,7 @@ class PdfListItem extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isEditing;
   final bool isSelected;
+  final Function()? onEdit;
   final ValueChanged<bool?>? onSelected;
 
   const PdfListItem({
@@ -18,6 +19,7 @@ class PdfListItem extends StatelessWidget {
     this.isSelected = false,
     this.onTap,
     this.onSelected,
+    this.onEdit,
   });
 
   @override
@@ -28,6 +30,14 @@ class PdfListItem extends StatelessWidget {
       enabled: pdfData.status == PDFStatus.completed,
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      trailing:
+          isEditing
+              ? null
+              : IconButton(
+                onPressed: onEdit,
+                color: theme.colorScheme.onSurfaceVariant,
+                icon: const Icon(Icons.edit_outlined),
+              ),
       leading: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),
         transitionBuilder: (child, animation) {

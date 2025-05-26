@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:snapfig/features/home/widgets/home_components.dart';
+import 'package:snapfig/features/home/widgets/show_rename_dialog.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
 
 class DocumentsWidget extends StatefulWidget {
@@ -145,6 +146,7 @@ class _DocumentsListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pdfProvider = InheritedPDFProviderWidget.of(context).provider;
     return CustomScrollView(
       slivers: [
         SliverAppBar.medium(
@@ -164,7 +166,7 @@ class _DocumentsListView extends StatelessWidget {
               curve: Curves.easeInOut,
               child: IconButton(
                 onPressed: isEditing ? null : onToggleEditing,
-                icon: const Icon(Icons.edit),
+                icon: const Icon(Icons.delete_outline_outlined),
               ),
             ),
           ],
@@ -175,6 +177,9 @@ class _DocumentsListView extends StatelessWidget {
             if (index.isEven) {
               return PdfListItem(
                 pdfData: pdfs[itemIndex],
+                onEdit:
+                    () =>
+                        showRenameDialog(context, pdfs[itemIndex], pdfProvider),
                 onTap: () {},
                 onSelected:
                     (isItemSelected) =>

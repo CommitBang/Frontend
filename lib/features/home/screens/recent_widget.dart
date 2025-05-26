@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:snapfig/features/home/widgets/home_components.dart';
+import 'package:snapfig/features/home/widgets/show_rename_dialog.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
 
 class RecentWidget extends StatefulWidget {
@@ -95,7 +96,12 @@ class _RecentWidgetState extends State<RecentWidget> {
                                 .map(
                                   (pdf) => PdfCard(
                                     pdfData: pdf,
-                                    onEdit: () {},
+                                    onEdit:
+                                        () => showRenameDialog(
+                                          context,
+                                          pdf,
+                                          _pdfProvider,
+                                        ),
                                     onOpen: () {},
                                   ),
                                 )
@@ -111,6 +117,12 @@ class _RecentWidgetState extends State<RecentWidget> {
                     return PdfListItem(
                       pdfData: otherPdfs[itemIndex],
                       onTap: () {},
+                      onEdit:
+                          () => showRenameDialog(
+                            context,
+                            otherPdfs[itemIndex],
+                            _pdfProvider,
+                          ),
                       isEditing: false,
                     );
                   }

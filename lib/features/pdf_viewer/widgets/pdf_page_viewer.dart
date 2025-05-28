@@ -1,3 +1,5 @@
+// lib/features/pdf_viewer/widgets/pdf_page_viewer.dart
+
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
@@ -6,7 +8,7 @@ import 'package:vector_math/vector_math_64.dart' as vm;
 /// - 수직 스크롤
 /// - 핀치 제스처 확대/축소
 /// - 외부에서 페이지 점프 기능 제공
-/// - 확대율 변경 콜백
+/// - 확대율 및 페이지 변경 콜백
 class PdfPageViewer extends StatefulWidget {
   final PdfDocument document;
   final ValueChanged<double>? onScaleChanged;
@@ -40,9 +42,11 @@ class PdfPageViewerState extends State<PdfPageViewer> {
   @override
   void initState() {
     super.initState();
+    // 첫 페이지를 1으로 설정
     _pageController = PageController(initialPage: 1)
       ..addListener(() {
-        widget.onPageChanged?.call(_pageController.page?.round() ?? 1);
+        final page = (_pageController.page ?? 1).round();
+        widget.onPageChanged?.call(page);
       });
     _transformationController = TransformationController();
     _lastTranslate = vm.Vector3.zero();
@@ -55,6 +59,7 @@ class PdfPageViewerState extends State<PdfPageViewer> {
     super.dispose();
   }
 
+  /// 외부에서 호출할 수 있도록 페이지 점프 메서드 공개
   void jumpToPage(int pageIndex) {
     _pageController.jumpToPage(pageIndex);
   }

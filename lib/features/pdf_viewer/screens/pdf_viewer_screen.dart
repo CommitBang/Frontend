@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdfrx/pdfrx.dart';
@@ -13,7 +14,7 @@ import 'package:pdf_viewer/shared/services/pdf_core/models/pdf_layout_model.dart
 import 'package:pdf_viewer/features/pdf_viewer/widgets/pdf_page_viewer.dart';
 
 class PdfViewerScreen extends StatefulWidget {
-  const PdfViewerScreen({super.key});
+  const PdfViewerScreen({Key? key}) : super(key: key);
 
   @override
   State<PdfViewerScreen> createState() => _PdfViewerScreenState();
@@ -24,7 +25,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
   late Future<PdfDocument> _pdfFuture;
   late TabController _tabController;
 
-  final GlobalKey<PdfPageViewerState> _viewerKey = GlobalKey<PdfPageViewerState>();
+  final GlobalKey<PdfPageViewerState> _viewerKey =
+  GlobalKey<PdfPageViewerState>();
   List<String> _recentPaths = [];
   List<PdfPageModel> _pages = [];
   List<PdfLayoutModel> _figures = [];
@@ -35,15 +37,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
   int _currentPage = 1;
   String _pdfTitle = 'PDF Viewer';
 
+  List<PdfPageModel> _pageList = [];
+  late List<GlobalKey> _pageKeys;
+
   @override
   void initState() {
     super.initState();
-    // FutureBuilder에 사용할 Future 초기화
-    _pdfFuture = PdfService.instance.loadPdfFromAsset('assets/sample_ocr_test.pdf');
-
-    _tabController = TabController(length: 2, vsync: this, initialIndex: 0)
+    _tabController =
+    TabController(length: 2, vsync: this, initialIndex: 0)
       ..addListener(() => setState(() {}));
-
     _loadPdf(path: 'assets/sample_ocr_test.pdf', isAsset: true);
   }
 
@@ -62,16 +64,23 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     );
     final recents = await PdfService.instance.getRecentPaths();
 
+    final allPages = model.getPages().cast<PdfPageModel>();
+    final pageList = allPages.where((p) => p.pageIndex > 0).toList();
+    final keys = List.generate(pageList.length, (_) => GlobalKey());
+
     setState(() {
       _pdfFuture = Future.value(doc);
       _recentPaths = recents;
-      _pages = model.getPages().cast<PdfPageModel>();
-      _figures = _pages
+      _pages = allPages;
+      _figures = allPages
           .expand((page) => page.getLayouts().whereType<PdfLayoutModel>())
           .toList();
       _currentPage = 1;
       _zoomPercent = 100;
       _pdfTitle = model.name;
+
+      _pageList = pageList;
+      _pageKeys = keys;
     });
   }
 
@@ -129,9 +138,26 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     if (input != null && input.isNotEmpty) {
       final num = int.tryParse(input);
       if (num != null && num > 0 && num < _pages.length) {
+        // 1) 뷰어 즉시 점프
         _viewerKey.currentState?.jumpToPage(num);
-        setState(() => _currentPage = num);
+
+        // 2) 한 프레임 뒤에 사이드바 중앙 정렬
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          _onPageChanged(num);
+        });
       }
+    }
+  }
+
+  void _onPageChanged(int pageIndex) {
+    setState(() => _currentPage = pageIndex);
+    final pos = _pageList.indexWhere((p) => p.pageIndex == pageIndex);
+    if (pos != -1 && _pageKeys[pos].currentContext != null) {
+      Scrollable.ensureVisible(
+        _pageKeys[pos].currentContext!,
+        duration: const Duration(milliseconds: 300),
+        alignment: 0.5,
+      );
     }
   }
 
@@ -143,12 +169,13 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
 
   @override
   Widget build(BuildContext context) {
-    final pageList = _pages.where((p) => p.pageIndex > 0).toList();
-    final filteredPages = pageList
+    final filteredPages = _pageList
         .where((p) => p.pageIndex.toString().contains(_searchQuery))
         .toList();
     final filteredFigures = _figures
-        .where((f) => f.content.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where((f) => f.content
+        .toLowerCase()
+        .contains(_searchQuery.toLowerCase()))
         .toList();
 
     return Scaffold(
@@ -185,8 +212,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                         document: doc,
                         onScaleChanged: (scale) =>
                             setState(() => _zoomPercent = (scale * 100).roundToDouble()),
-                        onPageChanged: (page) =>
-                            setState(() => _currentPage = page),
+                        onPageChanged: _onPageChanged,
                       ),
                     ),
                     Container(
@@ -198,15 +224,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                         children: [
                           Text('${_zoomPercent.toInt()}%',
                               style: Theme.of(context).textTheme.bodyMedium),
-                          Text('$_currentPage / ${pageList.length}',
+                          Text('$_currentPage / ${_pageList.length}',
                               style: Theme.of(context).textTheme.bodyLarge),
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _promptPageJump,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: const Icon(Icons.search),
-                            ),
+                          IconButton(
+                            icon: const Icon(Icons.search),
+                            tooltip: 'Go to page',
+                            onPressed: _promptPageJump,
                           ),
                         ],
                       ),
@@ -229,12 +252,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                           onPressed: (i) => _tabController.animateTo(i),
                           borderRadius: BorderRadius.circular(20),
                           selectedBorderColor: Theme.of(context).colorScheme.primary,
-                          fillColor:
-                          Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                           selectedColor: Theme.of(context).colorScheme.primary,
                           color: Colors.grey,
-                          constraints:
-                          const BoxConstraints(minWidth: 100, minHeight: 36),
+                          constraints: const BoxConstraints(minWidth: 100, minHeight: 36),
                           children: const [Text('Page'), Text('Figure')],
                         ),
                       ),
@@ -244,16 +265,21 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                           itemCount: filteredPages.length,
                           itemBuilder: (_, idx) {
                             final page = filteredPages[idx];
-                            return ListTile(
-                              leading: page.thumbnailWidget(width: 60, height: 80),
-                              title: Text('Page ${page.pageIndex}'),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () {
-                                _viewerKey.currentState
-                                    ?.jumpToPage(page.pageIndex);
-                                setState(
-                                        () => _currentPage = page.pageIndex);
-                              },
+                            final originalIdx = _pageList
+                                .indexWhere((p) => p.pageIndex == page.pageIndex);
+                            return Container(
+                              key: _pageKeys[originalIdx],
+                              child: ListTile(
+                                leading:
+                                page.thumbnailWidget(width: 60, height: 80),
+                                title: Text('Page ${page.pageIndex}'),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  _viewerKey.currentState
+                                      ?.jumpToPage(page.pageIndex);
+                                  _onPageChanged(page.pageIndex);
+                                },
+                              ),
                             );
                           },
                         )
@@ -269,10 +295,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              trailing:
-                              const Icon(Icons.chevron_right),
-                              onTap: () => _viewerKey.currentState
-                                  ?.jumpToPage(fig.pageIndex),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () =>
+                                  _viewerKey.currentState?.jumpToPage(fig.pageIndex),
                             );
                           },
                         ),
@@ -281,23 +306,19 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                         padding: const EdgeInsets.all(8.0),
                         child: TextField(
                           decoration: InputDecoration(
-                            hintText: _tabController.index == 0
-                                ? 'Search Page'
-                                : 'Search Figure',
+                            hintText:
+                            _tabController.index == 0 ? 'Search Page' : 'Search Figure',
                             prefixIcon: const Icon(Icons.search),
                             suffixIcon: _searchQuery.isNotEmpty
                                 ? IconButton(
                               icon: const Icon(Icons.clear),
-                              onPressed: () =>
-                                  setState(() => _searchQuery = ''),
+                              onPressed: () => setState(() => _searchQuery = ''),
                             )
                                 : null,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 12),
+                            contentPadding:
+                            const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                           ),
                           onChanged: (v) => setState(() => _searchQuery = v),
                         ),

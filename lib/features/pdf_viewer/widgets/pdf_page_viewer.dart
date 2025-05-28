@@ -42,19 +42,24 @@ class PdfPageViewerState extends State<PdfPageViewer> {
   @override
   void initState() {
     super.initState();
-    // 첫 페이지를 1으로 설정
-    _pageController = PageController(initialPage: 1)
+
+    // 페이지 컨트롤러: 페이지 변화 콜백 등록
+    _pageController = PageController(initialPage: 1) // 초기 페이지 값 설정
       ..addListener(() {
-        final page = (_pageController.page ?? 1).round();
+        final page = (_pageController.page ?? 1).round(); // 페이지 목록의 첫번째 페이지 값 설정
         widget.onPageChanged?.call(page);
       });
-    _transformationController = TransformationController();
+
+    // TransformationController 생성 후 리스너 등록
+    _transformationController = TransformationController()
+      ..addListener(_onTransformChanged);
     _lastTranslate = vm.Vector3.zero();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _transformationController.removeListener(_onTransformChanged);
     _transformationController.dispose();
     super.dispose();
   }
@@ -64,8 +69,16 @@ class PdfPageViewerState extends State<PdfPageViewer> {
     _pageController.jumpToPage(pageIndex);
   }
 
-  void _notifyScale() {
-    widget.onScaleChanged?.call(_currentScale);
+  /// TransformationController 에 변화가 생길 때마다 호출
+  void _onTransformChanged() {
+    // 매트릭스에서 스케일 축 최대값을 추출
+    final matrix = _transformationController.value;
+    final scale = matrix.getMaxScaleOnAxis();
+    // 스케일이 변경됐다면 상태 갱신 및 콜백
+    if (scale != _currentScale) {
+      _currentScale = scale.clamp(_minScale, _maxScale);
+      widget.onScaleChanged?.call(_currentScale);
+    }
   }
 
   void _zoomIn() {
@@ -76,7 +89,7 @@ class PdfPageViewerState extends State<PdfPageViewer> {
       _transformationController.value = Matrix4.identity()
         ..translate(_lastTranslate.x, _lastTranslate.y)
         ..scale(_currentScale);
-      _notifyScale();
+      widget.onScaleChanged?.call(_currentScale);
     });
   }
 
@@ -88,7 +101,7 @@ class PdfPageViewerState extends State<PdfPageViewer> {
       _transformationController.value = Matrix4.identity()
         ..translate(_lastTranslate.x, _lastTranslate.y)
         ..scale(_currentScale);
-      _notifyScale();
+      widget.onScaleChanged?.call(_currentScale);
     });
   }
 
@@ -96,7 +109,7 @@ class PdfPageViewerState extends State<PdfPageViewer> {
     setState(() {
       _transformationController.value =
       Matrix4.identity()..scale(_currentScale);
-      _notifyScale();
+      widget.onScaleChanged?.call(_currentScale);
     });
   }
 
@@ -135,7 +148,6 @@ class PdfPageViewerState extends State<PdfPageViewer> {
                   scaleEnabled: true,
                   minScale: _minScale,
                   maxScale: _maxScale,
-                  onInteractionEnd: (_) => _notifyScale(),
                   child: SizedBox(
                     width: constraints.maxWidth,
                     height: constraints.maxHeight,

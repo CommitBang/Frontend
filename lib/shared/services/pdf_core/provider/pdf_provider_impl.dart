@@ -1,12 +1,22 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:isar/isar.dart';
 import 'package:snapfig/shared/services/ocr_core/ocr_core.dart';
 import 'package:snapfig/shared/services/pdf_core/models/models.dart';
 import 'package:snapfig/shared/services/pdf_core/provider/pdf_provider.dart';
+import 'package:path/path.dart' as path_lib;
 import 'package:pdfrx/pdfrx.dart';
 import 'package:logging/logging.dart';
 import 'dart:isolate';
+
+class _PDFInfo {
+  final int totalPages;
+  final List<int>? thumbnail;
+
+  _PDFInfo({required this.totalPages, this.thumbnail});
+}
 
 class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   late final Isar _isar;
@@ -48,9 +58,9 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   }
 
   void _listenDatabase() {
-    final stream = _isar.pDFModels.watchLazy();
+    final stream = _isar.pDFModels.watchLazy(fireImmediately: true);
     _databaseSubscription = stream.listen((_) async {
-      _pdfs = await _isar.pDFModels.where().findAll();
+      _pdfs = await _getAllPdfs();
       _logger.info('PDFs are changed.');
       notifyListeners();
       // OCR 처리 대기 목록 처리
@@ -62,6 +72,10 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
         }
       }
     });
+  }
+
+  Future<List<PDFModel>> _getAllPdfs() async {
+    return await _isar.pDFModels.where().sortByUpdatedAt().findAll();
   }
 
   Future<List<PDFModel>> _getPendingPdfs() async {
@@ -116,24 +130,53 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
     throw UnimplementedError();
   }
 
+  Future<_PDFInfo> _getPDFInfo(String filePath) async {
+    final data = await PdfDocument.openFile(filePath);
+    try {
+      final thumbnail = await renderPageToPngBytes(data.pages.first);
+      return _PDFInfo(totalPages: data.pages.length, thumbnail: thumbnail);
+    } catch (e) {
+      _logger.severe('Failed to get PDF info: $e');
+      return _PDFInfo(totalPages: 0, thumbnail: null);
+    } finally {
+      await data.dispose();
+    }
+  }
+
+  Future<Uint8List?> renderPageToPngBytes(PdfPage page) async {
+    final thumbnailData = await page.render(
+      width: page.width.toInt(),
+      height: page.height.toInt(),
+    );
+    final thumbnailImg = await thumbnailData?.createImage();
+    final thumbnailBytes = await thumbnailImg?.toByteData(
+      format: ImageByteFormat.png,
+    );
+    return thumbnailBytes?.buffer.asUint8List();
+  }
+
   @override
   Future<void> addPDF(String filePath) async {
-    final pdfInfo = await PdfDocument.openFile(filePath);
     try {
       final pdf = PDFModel.create(
-        name: pdfInfo.sourceName,
+        name: path_lib.basenameWithoutExtension(filePath),
         path: filePath,
         createdAt: DateTime.now(),
-        totalPages: pdfInfo.pages.length,
+        totalPages: 0,
         status: PDFStatus.pending,
+        thumbnail: null,
       );
       await _isar.writeTxn(() async {
         await _isar.pDFModels.put(pdf);
       });
+      final pdfInfo = await _getPDFInfo(filePath);
+      await updatePDF(
+        id: pdf.id,
+        thumbnail: pdfInfo.thumbnail,
+        totalPages: pdfInfo.totalPages,
+      );
     } catch (e) {
       _logger.severe('Failed to add PDF: $e');
-    } finally {
-      await pdfInfo.dispose();
     }
   }
 
@@ -150,6 +193,8 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
     String? name,
     DateTime? updatedAt,
     PDFStatus? status,
+    List<int>? thumbnail,
+    int? totalPages,
   }) async {
     await _isar.writeTxn(() async {
       try {
@@ -158,7 +203,13 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
           _logger.severe('PDF not found: $id');
           return;
         }
-        pdf.update(name: name, updatedAt: updatedAt, status: status);
+        pdf.update(
+          name: name,
+          updatedAt: updatedAt,
+          status: status,
+          thumbnail: thumbnail,
+          totalPages: totalPages,
+        );
         await _isar.pDFModels.put(pdf);
       } catch (e) {
         _logger.severe('Failed to update PDF: $e');
@@ -167,11 +218,17 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   }
 
   @override
-  Future<List<BasePdf>> queryPDFs({String? keyword, PDFStatus? status}) async {
+  Future<List<BasePdf>> queryPDFs({
+    String? keyword,
+    PDFStatus? status,
+    int? limit,
+  }) async {
     var query = _isar.pDFModels
         .filter()
         .optional(keyword != null, (q) => q.nameContains(keyword!))
-        .optional(status != null, (q) => q.statusEqualTo(status!));
+        .optional(status != null, (q) => q.statusEqualTo(status!))
+        .sortByUpdatedAt()
+        .optional(limit != null, (q) => q.limit(limit!));
     return await query.findAll();
   }
 

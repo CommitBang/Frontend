@@ -43,13 +43,18 @@ const PDFModelSchema = CollectionSchema(
       type: IsarType.byte,
       enumMap: _PDFModelstatusEnumValueMap,
     ),
-    r'total_pages': PropertySchema(
+    r'thumbnail': PropertySchema(
       id: 5,
+      name: r'thumbnail',
+      type: IsarType.longList,
+    ),
+    r'total_pages': PropertySchema(
+      id: 6,
       name: r'total_pages',
       type: IsarType.long,
     ),
     r'updated_at': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'updated_at',
       type: IsarType.dateTime,
     )
@@ -84,6 +89,12 @@ int _pDFModelEstimateSize(
   var bytesCount = offsets.last;
   bytesCount += 3 + object.name.length * 3;
   bytesCount += 3 + object.path.length * 3;
+  {
+    final value = object.thumbnail;
+    if (value != null) {
+      bytesCount += 3 + value.length * 8;
+    }
+  }
   return bytesCount;
 }
 
@@ -98,8 +109,9 @@ void _pDFModelSerialize(
   writer.writeString(offsets[2], object.name);
   writer.writeString(offsets[3], object.path);
   writer.writeByte(offsets[4], object.status.index);
-  writer.writeLong(offsets[5], object.totalPages);
-  writer.writeDateTime(offsets[6], object.updatedAt);
+  writer.writeLongList(offsets[5], object.thumbnail);
+  writer.writeLong(offsets[6], object.totalPages);
+  writer.writeDateTime(offsets[7], object.updatedAt);
 }
 
 PDFModel _pDFModelDeserialize(
@@ -115,7 +127,8 @@ PDFModel _pDFModelDeserialize(
     path: reader.readString(offsets[3]),
     status: _PDFModelstatusValueEnumMap[reader.readByteOrNull(offsets[4])] ??
         PDFStatus.pending,
-    totalPages: reader.readLong(offsets[5]),
+    thumbnail: reader.readLongList(offsets[5]),
+    totalPages: reader.readLong(offsets[6]),
   );
   object.id = id;
   return object;
@@ -140,8 +153,10 @@ P _pDFModelDeserializeProp<P>(
       return (_PDFModelstatusValueEnumMap[reader.readByteOrNull(offset)] ??
           PDFStatus.pending) as P;
     case 5:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongList(offset)) as P;
     case 6:
+      return (reader.readLong(offset)) as P;
+    case 7:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -723,6 +738,166 @@ extension PDFModelQueryFilter
     });
   }
 
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition> thumbnailIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'thumbnail',
+      ));
+    });
+  }
+
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition> thumbnailIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'thumbnail',
+      ));
+    });
+  }
+
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition>
+      thumbnailElementEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'thumbnail',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition>
+      thumbnailElementGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'thumbnail',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition>
+      thumbnailElementLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'thumbnail',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition>
+      thumbnailElementBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'thumbnail',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition>
+      thumbnailLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'thumbnail',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition> thumbnailIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'thumbnail',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition>
+      thumbnailIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'thumbnail',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition>
+      thumbnailLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'thumbnail',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition>
+      thumbnailLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'thumbnail',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition>
+      thumbnailLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'thumbnail',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
   QueryBuilder<PDFModel, PDFModel, QAfterFilterCondition> totalPagesEqualTo(
       int value) {
     return QueryBuilder.apply(this, (query) {
@@ -1112,6 +1287,12 @@ extension PDFModelQueryWhereDistinct
     });
   }
 
+  QueryBuilder<PDFModel, PDFModel, QDistinct> distinctByThumbnail() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'thumbnail');
+    });
+  }
+
   QueryBuilder<PDFModel, PDFModel, QDistinct> distinctByTotalPages() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'total_pages');
@@ -1160,6 +1341,12 @@ extension PDFModelQueryProperty
   QueryBuilder<PDFModel, PDFStatus, QQueryOperations> statusProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'pdf_status');
+    });
+  }
+
+  QueryBuilder<PDFModel, List<int>?, QQueryOperations> thumbnailProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'thumbnail');
     });
   }
 

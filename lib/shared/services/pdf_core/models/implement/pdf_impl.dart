@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:isar/isar.dart';
 import 'package:snapfig/shared/services/pdf_core/models/implement/page_impl.dart';
 import 'package:snapfig/shared/services/pdf_core/models/interface/base_pdf.dart';
@@ -27,7 +25,10 @@ class PDFModel extends BasePdf {
 
   @Name('total_pages')
   @override
-  final int totalPages;
+  int totalPages;
+
+  @override
+  List<int>? thumbnail;
 
   int _currentPage = 0;
 
@@ -45,6 +46,7 @@ class PDFModel extends BasePdf {
     required this.totalPages,
     required int currentPage,
     required PDFStatus status,
+    this.thumbnail,
   }) : _currentPage = currentPage,
        _name = name,
        _status = status;
@@ -55,6 +57,7 @@ class PDFModel extends BasePdf {
     required this.createdAt,
     required this.totalPages,
     required PDFStatus status,
+    this.thumbnail,
   }) : _name = name,
        _status = status;
 
@@ -77,14 +80,19 @@ class PDFModel extends BasePdf {
   int get currentPage => _currentPage;
 
   @override
-  Future<Uint8List?> getThumbnail() async => null;
-
-  @override
   Future<List<PageModel>> getPages() async => [];
 
-  void update({String? name, DateTime? updatedAt, PDFStatus? status}) {
+  void update({
+    String? name,
+    DateTime? updatedAt,
+    PDFStatus? status,
+    List<int>? thumbnail,
+    int? totalPages,
+  }) {
     _name = name ?? _name;
     _updatedAt = updatedAt ?? _updatedAt;
     _status = status ?? _status;
+    this.thumbnail = thumbnail ?? this.thumbnail;
+    this.totalPages = totalPages ?? this.totalPages;
   }
 }

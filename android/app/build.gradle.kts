@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.pdf_viewer"
+    namespace = "com.example.snapfig"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973" // flutter.ndkVersion
-    externalNativeBuild{
-        cmake{
+    externalNativeBuild {
+        cmake {
             version = "3.22.1" // cmake 버전 관리
         }
     }
@@ -26,7 +26,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.pdf_viewer"
+        applicationId = "com.example.snapfig"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

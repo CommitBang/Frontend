@@ -83,6 +83,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
 
     // 4) 페이지 & 키 초기화
     final allPages = model.getPages().cast<PdfPageModel>();
+    // index 0는 무시
     final pageList = allPages.where((p) => p.pageIndex > 0).toList();
     final keys = List.generate(pageList.length, (_) => GlobalKey());
 
@@ -102,6 +103,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     });
   }
 
+  /// 기기 로컬에서 PDF 선택
   Future<void> _pickPdfFromDevice() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -112,6 +114,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     }
   }
 
+  /// 최근 열어본 PDF 리스트 표시
   void _showRecentList() {
     showModalBottomSheet(
       context: context,
@@ -134,6 +137,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     );
   }
 
+  /// 하단바 “Go to page” 다이얼로그
   Future<void> _promptPageJump() async {
     final input = await showDialog<String>(
       context: context,
@@ -166,6 +170,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     }
   }
 
+  /// 페이지 변경 시 하단 숫자, 사이드바 위치 업데이트
   void _onPageChanged(int pageIndex) {
     setState(() => _currentPage = pageIndex);
     final pos = _pageList.indexWhere((p) => p.pageIndex == pageIndex);
@@ -196,13 +201,25 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(_pdfTitle),
+        // 뒤로가기(홈) 버튼
         leading: IconButton(
-          icon: Icon(_sidebarVisible ? Icons.chevron_right : Icons.chevron_left),
-          onPressed: () => setState(() => _sidebarVisible = !_sidebarVisible),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
+          onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          // 최근 문서
           IconButton(icon: const Icon(Icons.history), onPressed: _showRecentList),
+          // 로컬 폴더 열기
           IconButton(icon: const Icon(Icons.folder_open), onPressed: _pickPdfFromDevice),
+          // ─────────────────────────────────────
+          // 사이드바 숨기기/보이기 버튼
+          IconButton(
+            icon: Icon(_sidebarVisible ? Icons.visibility_off : Icons.visibility),
+            tooltip: _sidebarVisible ? 'Hide sidebar' : 'Show sidebar',
+            onPressed: () => setState(() => _sidebarVisible = !_sidebarVisible),
+          ),
+          // ─────────────────────────────────────
         ],
       ),
       body: FutureBuilder<PdfDocument>(
@@ -254,6 +271,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                   ],
                 ),
               ),
+
               // 사이드바
               if (_sidebarVisible)
                 Container(
@@ -271,7 +289,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                           onPressed: (i) => _tabController.animateTo(i),
                           borderRadius: BorderRadius.circular(20),
                           selectedBorderColor: Theme.of(context).colorScheme.primary,
-                          fillColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                          fillColor:
+                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                           selectedColor: Theme.of(context).colorScheme.primary,
                           color: Colors.grey,
                           constraints: const BoxConstraints(minWidth: 100, minHeight: 36),
@@ -281,6 +300,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                       // 리스트
                       Expanded(
                         child: _tabController.index == 0
+                        // Page 목록
                             ? ListView.builder(
                           itemCount: filteredPages.length,
                           itemBuilder: (_, idx) {
@@ -294,13 +314,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                                 title: Text('Page ${page.pageIndex}'),
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: () {
-                                  _viewerKey.currentState?.jumpToPage(page.pageIndex);
+                                  _viewerKey.currentState
+                                      ?.jumpToPage(page.pageIndex);
                                   _onPageChanged(page.pageIndex);
                                 },
                               ),
                             );
                           },
                         )
+                        // Figure 목록
                             : ListView.builder(
                           itemCount: filteredFigures.length,
                           itemBuilder: (_, idx) {
@@ -333,9 +355,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                               onPressed: () => setState(() => _searchQuery = ''),
                             )
                                 : null,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8)),
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            contentPadding:
+                            const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                           ),
                           onChanged: (v) => setState(() => _searchQuery = v),
                         ),

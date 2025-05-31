@@ -1,11 +1,11 @@
 // lib/shared/services/pdf_core/models/pdf_layout_model.dart
 
 import 'dart:typed_data';
-import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; // ← Flutter 위젯, Image, FutureBuilder, SizedBox, Center, CircularProgressIndicator 등
+import 'package:isar/isar.dart';
 
-import 'interface/base_layout.dart';
+import '../../../shared/services/pdf_core/models/interface/base_layout.dart';
 import 'pdf_page_model.dart';
 
 /// PDF 문서 내 레이아웃(텍스트, 수식, 헤더, 알고리즘 등)을 나타내는 모델
@@ -37,19 +37,22 @@ class PdfLayoutModel implements BaseLayout {
     required this.rect,
   });
 
+  /// 고유 식별자: 페이지 인덱스와 콘텐츠 해시를 조합해 생성
+  @override
+  Id get id => pageIndex.hashCode ^ content.hashCode;
+
+  /// (선택) BaseLayout에 thumbnail 필드가 있다면 구현,
+  /// 없다면 그냥 null 반환
+  List<int>? get thumbnail => null;
+
   /// OCR 파싱 결과 블록에서 모델 생성
-  ///
-  /// JSON 필드:
-  /// - block_label: "text"|"formula"|"header"|"number"|"algorithm"
-  /// - block_content: 블록 내 원본 텍스트
-  /// - block_bbox: [x0, y0, x1, y1]
   factory PdfLayoutModel.fromParsingBlock(
-      Map<String, dynamic> block,
-      int pageIndex,
-      ) {
+    Map<String, dynamic> block,
+    int pageIndex,
+  ) {
     final label = block['block_label'] as String;
     final type = LayoutType.values.firstWhere(
-          (e) => e.toString().endsWith(label),
+      (e) => e.toString().endsWith(label),
       orElse: () => LayoutType.text,
     );
     final bbox = (block['block_bbox'] as List).cast<num>();
@@ -58,7 +61,8 @@ class PdfLayoutModel implements BaseLayout {
       type: type,
       content: block['block_content'] as String,
       text: type == LayoutType.text ? block['block_content'] as String : null,
-      latex: type == LayoutType.formula ? block['block_content'] as String : null,
+      latex:
+          type == LayoutType.formula ? block['block_content'] as String : null,
       rect: Rect.fromLTWH(
         bbox[0].toDouble(),
         bbox[1].toDouble(),
@@ -69,14 +73,10 @@ class PdfLayoutModel implements BaseLayout {
   }
 
   /// 수식 인식 결과 블록에서 모델 생성
-  ///
-  /// JSON 필드:
-  /// - rec_formula: 인식된 LaTeX 수식 문자열
-  /// - dt_polys: [x0, y0, x1, y1]
   factory PdfLayoutModel.fromFormulaBlock(
-      Map<String, dynamic> block,
-      int pageIndex,
-      ) {
+    Map<String, dynamic> block,
+    int pageIndex,
+  ) {
     final polys = (block['dt_polys'] as List).cast<num>();
     return PdfLayoutModel(
       pageIndex: pageIndex,
@@ -93,17 +93,17 @@ class PdfLayoutModel implements BaseLayout {
     );
   }
 
-  /// 이 레이아웃 블록 영역만 잘라낸 썸네일 위젯을 반환합니다.
-  /// 내부적으로 PdfPageModel.getThumbnailBytes를 호출하여
-  /// 지정된 크기로 렌더링된 페이지 이미지 바이트를 비동기로 가져옵니다.
-  Widget thumbnailWidget({
-    double width = 60,
-    double height = 80,
-  }) {
+  /// 이 레이아웃 블록 영역만 잘라낸 썸네일 위젯
+  Widget thumbnailWidget({double width = 60, double height = 80}) {
     return FutureBuilder<Uint8List>(
-      future: PdfPageModel.getThumbnailBytes(pageIndex, width.toInt(), height.toInt()),
+      future: PdfPageModel.getThumbnailBytes(
+        pageIndex,
+        width.toInt(),
+        height.toInt(),
+      ),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData) {
           return Image.memory(
             snapshot.data!,
             width: width,

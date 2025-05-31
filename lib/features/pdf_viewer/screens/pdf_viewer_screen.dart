@@ -21,7 +21,8 @@ class PdfViewerScreen extends StatefulWidget {
   /// [path]가 애셋인지(true: 에셋, false: 로컬 파일) 구분합니다.
   final bool isAsset;
 
-  const PdfViewerScreen({super.key, required this.path, this.isAsset = true});
+  const PdfViewerScreen({Key? key, required this.path, this.isAsset = true})
+    : super(key: key);
 
   @override
   State<PdfViewerScreen> createState() => _PdfViewerScreenState();

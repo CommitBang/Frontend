@@ -2,7 +2,6 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdfrx/pdfrx.dart';
@@ -21,8 +20,7 @@ class PdfViewerScreen extends StatefulWidget {
   /// [path]가 애셋인지(true: 에셋, false: 로컬 파일) 구분합니다.
   final bool isAsset;
 
-  const PdfViewerScreen({Key? key, required this.path, this.isAsset = true})
-    : super(key: key);
+  const PdfViewerScreen({super.key, required this.path, this.isAsset = true});
 
   @override
   State<PdfViewerScreen> createState() => _PdfViewerScreenState();
@@ -36,7 +34,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
   final GlobalKey<PdfPageViewerState> _viewerKey =
       GlobalKey<PdfPageViewerState>();
   List<String> _recentPaths = [];
-  List<PdfPageModel> _pages = [];
   List<PdfLayoutModel> _figures = [];
   String _searchQuery = '';
   bool _sidebarVisible = true;
@@ -95,7 +92,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     setState(() {
       _pdfFuture = Future.value(doc);
       _recentPaths = recents;
-      _pages = allPages;
       _figures = allLayouts;
       _currentPage = 1;
       _zoomPercent = 100;
@@ -141,45 +137,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     );
   }
 
-  /// 하단바 “Go to page” 다이얼로그
-  Future<void> _promptPageJump() async {
-    final input = await showDialog<String>(
-      context: context,
-      builder: (_) {
-        String txt = '';
-        return AlertDialog(
-          title: const Text('Go to page'),
-          content: TextField(
-            keyboardType: TextInputType.number,
-            onChanged: (v) => txt = v,
-            decoration: const InputDecoration(hintText: 'Enter page number'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, txt),
-              child: const Text('Go'),
-            ),
-          ],
-        );
-      },
-    );
-    if (input != null && input.isNotEmpty) {
-      final num = int.tryParse(input);
-      if (num != null && num > 0 && num < _pages.length) {
-        // 뷰어 점프
-        _viewerKey.currentState?.jumpToPage(num);
-        // 한 프레임 뒤 사이드바 중앙 정렬
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          _onPageChanged(num);
-        });
-      }
-    }
-  }
-
   /// 페이지 변경 시 하단 숫자 & 사이드바 위치 업데이트
   void _onPageChanged(int pageIndex) {
     setState(() => _currentPage = pageIndex);
@@ -216,11 +173,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(_pdfTitle),
-        leading: IconButton(
-          icon: Icon(_sidebarVisible ? Icons.visibility_off : Icons.visibility),
-          tooltip: _sidebarVisible ? 'Hide sidebar' : 'Show sidebar',
-          onPressed: () => setState(() => _sidebarVisible = !_sidebarVisible),
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
@@ -280,8 +232,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen>
                           ),
                           IconButton(
                             icon: const Icon(Icons.search),
-                            tooltip: 'Go to page',
-                            onPressed: _promptPageJump,
+                            tooltip:
+                                _sidebarVisible
+                                    ? 'Hide sidebar'
+                                    : 'Show sidebar',
+                            onPressed: () {
+                              setState(
+                                () => _sidebarVisible = !_sidebarVisible,
+                              );
+                            },
                           ),
                         ],
                       ),

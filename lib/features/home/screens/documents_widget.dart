@@ -5,6 +5,8 @@ import 'package:snapfig/features/home/widgets/home_components.dart';
 import 'package:snapfig/features/home/widgets/show_rename_dialog.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
 
+import 'package:snapfig/features/pdf_viewer/screens/pdf_viewer_screen.dart';
+
 class DocumentsWidget extends StatefulWidget {
   const DocumentsWidget({super.key});
 
@@ -180,7 +182,21 @@ class _DocumentsListView extends StatelessWidget {
                 onEdit:
                     () =>
                         showRenameDialog(context, pdfs[itemIndex], pdfProvider),
-                onTap: () {},
+
+                /// 수정부분: 버튼을 누르면 PDF 뷰어로 이동하도록 변경///
+                //onTap: () {}
+                onTap: () {
+                  final docModel = pdfs[itemIndex] as PDFModel;
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder:
+                          (_) => PdfViewerScreen(
+                            path: docModel.path,
+                            isAsset: false,
+                          ),
+                    ),
+                  );
+                },
                 onSelected:
                     (isItemSelected) =>
                         onSelectPDF(pdfs[itemIndex], isItemSelected ?? false),

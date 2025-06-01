@@ -1,3 +1,5 @@
+//app_theme.dart
+
 import 'package:flutter/material.dart';
 import 'package:snapfig/core/theme/color_scheme.dart';
 import 'package:snapfig/core/theme/text_theme.dart';

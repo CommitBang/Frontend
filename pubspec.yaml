@@ -31,17 +31,21 @@ dependencies:
   flutter:
     sdk: flutter
 
+  pdfrx: ^1.1.28
+  path_provider: ^2.1.5
+  file_picker: ^10.1.7
+  provider: ^6.1.5
+  vector_math: ^2.1.4
+  shared_preferences: ^2.5.3
+  path: ^1.9.1
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   isar: ^3.1.0+1
   isar_flutter_libs: ^3.1.0+1
-  path_provider: ^2.1.5
   intl: ^0.20.2
-  pdfrx: ^1.1.29
   logging: ^1.2.0
-  file_picker: ^10.0.0
-  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +78,10 @@ flutter:
   assets:
     - assets/icons/
     - integration_test/assets/
+    - assets/sample.pdf
+    - assets/sample_ocr_test.pdf
+    - assets/ocr_result.json
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

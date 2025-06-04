@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:snapfig/features/home/widgets/home_components.dart';
 import 'package:snapfig/features/home/widgets/show_rename_dialog.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
+import 'package:snapfig/features/pdf_viewer/screens/pdf_viewer_screen.dart';
 
 class RecentWidget extends StatefulWidget {
   const RecentWidget({super.key});
@@ -102,7 +103,17 @@ class _RecentWidgetState extends State<RecentWidget> {
                                           pdf,
                                           _pdfProvider,
                                         ),
-                                    onOpen: () {},
+                                    onOpen: () {
+                                      final pdfModel = pdf as PDFModel;
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => PdfViewerScreen(
+                                            path: pdfModel.path,
+                                          isAsset: false,
+                                        ),
+                                      ),
+                                      );
+                                    },
                                   ),
                                 )
                                 .toList(),

@@ -19,6 +19,7 @@ class PdfSidebar extends StatelessWidget {
     return Container(
       width: 300,
       decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         border: Border(left: BorderSide(color: Theme.of(context).dividerColor)),
       ),
       child: Column(
@@ -48,22 +49,22 @@ class PdfSidebar extends StatelessWidget {
   }
 
   Widget _buildTabToggle(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: ToggleButtons(
-        isSelected: [
-          viewModel.selectedTabIndex == 0,
-          viewModel.selectedTabIndex == 1,
-        ],
-        onPressed: viewModel.selectTab,
-        borderRadius: BorderRadius.circular(20),
-        selectedBorderColor: Theme.of(context).colorScheme.primary,
-        fillColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        selectedColor: Theme.of(context).colorScheme.primary,
-        color: Colors.grey,
-        constraints: const BoxConstraints(minWidth: 100, minHeight: 36),
-        children: const [Text('Page'), Text('Figure')],
-      ),
+    return ToggleButtons(
+      isSelected: [
+        viewModel.selectedTabIndex == 0,
+        viewModel.selectedTabIndex == 1,
+      ],
+      onPressed: viewModel.selectTab,
+      borderRadius: BorderRadius.circular(20),
+      selectedBorderColor: Theme.of(context).colorScheme.onSecondaryContainer,
+      fillColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+      selectedColor: Theme.of(context).colorScheme.onSecondaryContainer,
+      color: Theme.of(context).colorScheme.onSurface,
+      constraints: const BoxConstraints(minWidth: 100, minHeight: 36),
+      children: [
+        Text('Page', style: Theme.of(context).textTheme.bodyMedium),
+        Text('Figure', style: Theme.of(context).textTheme.bodyMedium),
+      ],
     );
   }
 

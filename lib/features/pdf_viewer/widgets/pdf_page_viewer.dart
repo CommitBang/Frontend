@@ -132,51 +132,48 @@ class PdfPageViewerState extends State<PdfPageViewer> {
   @override
   Widget build(BuildContext context) {
     final pageCount = widget.document.pages.length;
-
-    return Stack(
-      children: [
-        PageView.builder(
-          controller: _pageController,
-          scrollDirection: Axis.vertical,
-          itemCount: pageCount,
-          itemBuilder: (context, index) {
-            final page = widget.document.pages[index];
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                return InteractiveViewer(
-                  constrained: false,
-                  transformationController: _transformationController,
-                  panEnabled: true,
-                  scaleEnabled: true,
-                  minScale: _minScale,
-                  maxScale: _maxScale,
+    return PageView.builder(
+      controller: _pageController,
+      scrollDirection: Axis.vertical,
+      itemCount: pageCount,
+      itemBuilder: (context, index) {
+        final page = widget.document.pages[index];
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return InteractiveViewer(
+              constrained: false,
+              transformationController: _transformationController,
+              panEnabled: true,
+              scaleEnabled: true,
+              minScale: _minScale,
+              maxScale: _maxScale,
+              child: SizedBox(
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                child: FittedBox(
+                  fit:
+                      _fitWidth
+                          ? BoxFit.fitWidth
+                          : _fitHeight
+                          ? BoxFit.fitHeight
+                          : BoxFit.contain,
+                  alignment: Alignment.center,
                   child: SizedBox(
-                    width: constraints.maxWidth,
-                    height: constraints.maxHeight,
-                    child: FittedBox(
-                      fit:
-                          _fitWidth
-                              ? BoxFit.fitWidth
-                              : _fitHeight
-                              ? BoxFit.fitHeight
-                              : BoxFit.contain,
-                      alignment: Alignment.center,
-                      child: SizedBox(
-                        width: page.width,
-                        height: page.height,
-                        child: PdfPageView(
-                          document: widget.document,
-                          pageNumber: index,
-                        ),
-                      ),
+                    width: page.width,
+                    height: page.height,
+                    child: PdfPageView(
+                      backgroundColor:
+                          Theme.of(context).colorScheme.surfaceContainer,
+                      document: widget.document,
+                      pageNumber: index + 1,
                     ),
                   ),
-                );
-              },
+                ),
+              ),
             );
           },
-        ),
-      ],
+        );
+      },
     );
   }
 }

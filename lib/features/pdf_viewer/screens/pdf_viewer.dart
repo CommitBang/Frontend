@@ -4,6 +4,8 @@ import '../../../shared/services/pdf_core/pdf_core.dart';
 import '../models/pdf_viewer_view_model.dart';
 import '../widgets/pdf_page_viewer.dart';
 import '../widgets/pdf_sidebar.dart';
+import '../widgets/no_pdf_loaded_view.dart';
+import '../widgets/pdf_bottom_bar.dart';
 
 // 매직 넘버 상수 선언
 const double kStatusBarHeight = 48;
@@ -11,79 +13,6 @@ const double kIconSize = 64;
 const double kFontSize = 18;
 const double kSpacingLarge = 16;
 const double kSpacingSmall = 8;
-
-// PDF 미로딩 UI 분리
-class NoPdfLoadedView extends StatelessWidget {
-  const NoPdfLoadedView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.picture_as_pdf, size: kIconSize, color: Colors.grey),
-          SizedBox(height: kSpacingLarge),
-          Text(
-            'No PDF loaded',
-            style: TextStyle(fontSize: kFontSize, color: Colors.grey),
-          ),
-          SizedBox(height: kSpacingSmall),
-          Text(
-            'Open a PDF file to get started',
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// 하단 상태바 분리
-class PDFBottomBar extends StatelessWidget {
-  final int zoomPercent;
-  final int currentPage;
-  final int totalPages;
-  final bool sidebarVisible;
-  final VoidCallback onSidebarToggle;
-  const PDFBottomBar({
-    super.key,
-    required this.zoomPercent,
-    required this.currentPage,
-    required this.totalPages,
-    required this.sidebarVisible,
-    required this.onSidebarToggle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Container(
-        height: kStatusBarHeight,
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '$zoomPercent%',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            Text(
-              '$currentPage / $totalPages',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            IconButton(
-              icon: const Icon(Icons.search),
-              tooltip: sidebarVisible ? 'Hide sidebar' : 'Show sidebar',
-              onPressed: onSidebarToggle,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class PDFViewer extends StatefulWidget {
   final String path;
@@ -125,12 +54,13 @@ class _PDFViewerState extends State<PDFViewer> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_viewModel!.errorMessage!),
-            backgroundColor: Colors.red,
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: _viewModel!.pickPdfFromDevice,
+            content: Text(
+              _viewModel!.errorMessage!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
             ),
+            backgroundColor: Theme.of(context).colorScheme.errorContainer,
           ),
         );
         // Clear the error after showing
@@ -224,12 +154,30 @@ class _PDFViewerState extends State<PDFViewer> {
                 ),
               ),
               // Sidebar
-              if (_viewModel!.sidebarVisible)
-                PdfSidebar(
-                  viewModel: _viewModel!,
-                  onPageSelected: _onPageSelected,
-                  onLayoutSelected: _onLayoutSelected,
-                ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                transitionBuilder: (child, animation) {
+                  final offsetAnimation = Tween<Offset>(
+                    begin: const Offset(1, 0),
+                    end: Offset.zero,
+                  ).animate(
+                    CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                  );
+                  return SlideTransition(
+                    position: offsetAnimation,
+                    child: child,
+                  );
+                },
+                child:
+                    _viewModel!.sidebarVisible
+                        ? PdfSidebar(
+                          key: const ValueKey('sidebar'),
+                          viewModel: _viewModel!,
+                          onPageSelected: _onPageSelected,
+                          onLayoutSelected: _onLayoutSelected,
+                        )
+                        : const SizedBox.shrink(key: ValueKey('empty')),
+              ),
             ],
           ),
         );

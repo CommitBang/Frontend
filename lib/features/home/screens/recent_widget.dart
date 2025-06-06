@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:snapfig/features/home/widgets/home_components.dart';
 import 'package:snapfig/features/home/widgets/show_rename_dialog.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
-import 'package:snapfig/features/pdf_viewer/screens/pdf_viewer_screen.dart';
+import 'package:snapfig/shared/services/navigation_service/navigation_view_model.dart';
 
 class RecentWidget extends StatefulWidget {
   const RecentWidget({super.key});
@@ -16,6 +16,7 @@ class RecentWidget extends StatefulWidget {
 class _RecentWidgetState extends State<RecentWidget> {
   static const int _maxRecentPdfs = 5;
   late final PDFProvider _pdfProvider;
+  final NavigationViewModel _navigationViewModel = NavigationViewModel();
 
   @override
   void didChangeDependencies() {
@@ -104,14 +105,9 @@ class _RecentWidgetState extends State<RecentWidget> {
                                           _pdfProvider,
                                         ),
                                     onOpen: () {
-                                      final pdfModel = pdf as PDFModel;
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => PdfViewerScreen(
-                                            path: pdfModel.path,
-                                          isAsset: false,
-                                        ),
-                                      ),
+                                      _navigationViewModel.navigateToPdfViewer(
+                                        path: pdf.path,
+                                        isAsset: false,
                                       );
                                     },
                                   ),
@@ -127,7 +123,12 @@ class _RecentWidgetState extends State<RecentWidget> {
                   if (idx.isEven) {
                     return PdfListItem(
                       pdfData: otherPdfs[itemIndex],
-                      onTap: () {},
+                      onTap: () {
+                        _navigationViewModel.navigateToPdfViewer(
+                          path: otherPdfs[itemIndex].path,
+                          isAsset: false,
+                        );
+                      },
                       onEdit:
                           () => showRenameDialog(
                             context,

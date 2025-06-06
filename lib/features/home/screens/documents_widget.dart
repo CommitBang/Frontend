@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:snapfig/features/home/widgets/home_components.dart';
 import 'package:snapfig/features/home/widgets/show_rename_dialog.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
-import 'package:snapfig/features/pdf_viewer/screens/pdf_viewer_screen.dart';
+import 'package:snapfig/shared/services/navigation_service/navigation_view_model.dart';
 
 class DocumentsWidget extends StatefulWidget {
   const DocumentsWidget({super.key});
@@ -135,8 +135,9 @@ class _DocumentsListView extends StatelessWidget {
   final bool isEditing;
   final void Function(BasePdf, bool) onSelectPDF;
   final VoidCallback onToggleEditing;
+  final NavigationViewModel _navigationViewModel = NavigationViewModel();
 
-  const _DocumentsListView({
+  _DocumentsListView({
     required this.pdfs,
     required this.selectedPdfs,
     required this.isEditing,
@@ -182,14 +183,9 @@ class _DocumentsListView extends StatelessWidget {
                     () =>
                         showRenameDialog(context, pdfs[itemIndex], pdfProvider),
                 onTap: () {
-                  final pdfModel = pdfs[itemIndex] as PDFModel;
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => PdfViewerScreen(
-                          path: pdfModel.path,
-                          isAsset: false,
-                        ),
-                    ),
+                  _navigationViewModel.navigateToPdfViewer(
+                    path: pdfs[itemIndex].path,
+                    isAsset: false,
                   );
                 },
                 onSelected:

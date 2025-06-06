@@ -8,7 +8,12 @@ plugins {
 android {
     namespace = "com.example.snapfig"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973" // flutter.ndkVersion
+    externalNativeBuild {
+        cmake {
+            version = "3.22.1" // cmake 버전 관리
+        }
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

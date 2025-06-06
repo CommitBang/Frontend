@@ -233,6 +233,11 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   }
 
   @override
+  Future<BasePdf?> getPDF(String path) async {
+    return await _isar.pDFModels.filter().pathEqualTo(path).findFirst();
+  }
+
+  @override
   void dispose() {
     _databaseSubscription.cancel();
     _isar.close();

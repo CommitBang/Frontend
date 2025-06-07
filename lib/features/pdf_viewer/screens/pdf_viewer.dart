@@ -138,6 +138,7 @@ class _PDFViewerState extends State<PDFViewer> {
                       child: PdfPageViewer(
                         key: _viewerKey,
                         document: _viewModel!.document!,
+                        pages: _viewModel!.pages,
                         onScaleChanged: _onScaleChanged,
                         onPageChanged: _onPageChanged,
                       ),

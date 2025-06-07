@@ -103,6 +103,8 @@ class PageDetail {
   final String? section;
   final List<LayoutItem> layouts;
   final String fullText;
+  final int width;
+  final int height;
 
   PageDetail({
     required this.pageIndex,
@@ -110,6 +112,8 @@ class PageDetail {
     this.section,
     required this.layouts,
     required this.fullText,
+    required this.width,
+    required this.height,
   });
 
   factory PageDetail.fromJson(Map<String, dynamic> json) {
@@ -119,6 +123,7 @@ class PageDetail {
         layoutsJson
             .map((e) => LayoutItem.fromJson(e as Map<String, dynamic>))
             .toList();
+    final sizeJson = json['size'] as Map<String, dynamic>? ?? {};
 
     return PageDetail(
       pageIndex: (json['page_index'] as num).toInt(),
@@ -126,6 +131,8 @@ class PageDetail {
       section: json['section'] as String?,
       layouts: layouts,
       fullText: (json['full_text'] as String?) ?? '',
+      width: ((sizeJson['width'] ?? 0) as num).toInt(),
+      height: ((sizeJson['height'] ?? 0) as num).toInt(),
     );
   }
 }

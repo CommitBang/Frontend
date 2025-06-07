@@ -135,16 +135,22 @@ class PdfPageViewerState extends State<PdfPageViewer> {
   @override
   Widget build(BuildContext context) {
     final pageCount = widget.document.pages.length;
+
+    if (pageCount == 0) {
+      return const Center(child: Text('No pages found in document'));
+    }
+
     return PageView.builder(
       controller: _pageController,
       scrollDirection: Axis.vertical,
       itemCount: pageCount,
       itemBuilder: (context, index) {
-        final page = widget.document.pages[index];
+        if (index >= widget.document.pages.length) {
+          return const Center(child: Text('Page index out of bounds'));
+        }
         return LayoutBuilder(
           builder: (context, constraints) {
             return InteractiveViewer(
-              constrained: false,
               transformationController: _transformationController,
               panEnabled: true,
               scaleEnabled: true,
@@ -153,85 +159,11 @@ class PdfPageViewerState extends State<PdfPageViewer> {
               child: SizedBox(
                 width: constraints.maxWidth,
                 height: constraints.maxHeight,
-                child: FittedBox(
-                  fit:
-                      _fitWidth
-                          ? BoxFit.fitWidth
-                          : _fitHeight
-                          ? BoxFit.fitHeight
-                          : BoxFit.contain,
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    width: page.width,
-                    height: page.height,
-                    child: PdfPageView(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.surfaceContainer,
-                      document: widget.document,
-                      pageNumber: index + 1,
-                      decorationBuilder: (context, pageSize, page, pageImage) {
-                        if (widget.pages == null ||
-                            index >= widget.pages!.length) {
-                          return const SizedBox();
-                        }
-
-                        return FutureBuilder<List<BaseLayout>>(
-                          future: widget.pages![index].getLayouts(),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) return const SizedBox();
-
-                            final figureReferences =
-                                snapshot.data!
-                                    .where(
-                                      (layout) =>
-                                          layout.type ==
-                                          LayoutType.figureReference,
-                                    )
-                                    .toList();
-
-                            if (figureReferences.isEmpty) {
-                              return const SizedBox();
-                            }
-
-                            return Stack(
-                              children:
-                                  figureReferences.map((reference) {
-                                    final rect = reference.rect;
-                                    // Convert PDF coordinates to Flutter coordinates
-                                    // PDF uses bottom-left origin, Flutter uses top-left
-                                    final top = pageSize.height - rect.bottom;
-
-                                    return Positioned(
-                                      left: rect.left,
-                                      top: top,
-                                      width: rect.width,
-                                      height: rect.height,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.secondary,
-                                            width: 2,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .secondary
-                                              .withOpacity(0.1),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
+                child: PdfPageView(
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainer,
+                  document: widget.document,
+                  pageNumber: index + 1,
                 ),
               ),
             );

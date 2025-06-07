@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 import '../../../shared/services/pdf_core/pdf_core.dart';
 import '../models/pdf_viewer_view_model.dart';
-import '../widgets/pdf_page_viewer.dart';
 import '../widgets/pdf_sidebar.dart';
 import '../widgets/no_pdf_loaded_view.dart';
 import '../widgets/pdf_bottom_bar.dart';
@@ -25,9 +25,8 @@ class PDFViewer extends StatefulWidget {
 }
 
 class _PDFViewerState extends State<PDFViewer> {
-  final GlobalKey<PdfPageViewerState> _viewerKey =
-      GlobalKey<PdfPageViewerState>();
   PdfViewerViewModel? _viewModel;
+  final PdfViewerController _pdfController = PdfViewerController();
 
   @override
   void initState() {
@@ -46,6 +45,9 @@ class _PDFViewerState extends State<PDFViewer> {
       // Load initial PDF
       _viewModel!.loadPdf(path: widget.path, isAsset: widget.isAsset);
     });
+
+    // Listen to PDF controller for page changes
+    _pdfController.addListener(_onPdfControllerChanged);
   }
 
   void _handleViewModelChanges() {
@@ -69,10 +71,21 @@ class _PDFViewerState extends State<PDFViewer> {
     }
   }
 
+  void _onPdfControllerChanged() {
+    if (_pdfController.isReady) {
+      // Update current page in view model
+      final pageNumber = _pdfController.pageNumber ?? 1;
+      _viewModel?.updateCurrentPage(pageNumber);
+
+      // Update zoom in view model
+      final zoomRatio = _pdfController.currentZoom;
+      _viewModel?.updateZoom(zoomRatio);
+    }
+  }
+
   void _onPageSelected(BasePage page) {
-    // Jump to the selected page
-    _viewerKey.currentState?.jumpToPage(page.pageIndex);
-    _onPageChanged(page.pageIndex);
+    // Jump to the selected page (page.pageIndex is 0-based, but controller expects 1-based)
+    _pdfController.goToPage(pageNumber: page.pageIndex + 1);
   }
 
   void _onLayoutSelected(BaseLayout layout) {
@@ -82,24 +95,16 @@ class _PDFViewerState extends State<PDFViewer> {
       for (final page in _viewModel!.pages) {
         page.getLayouts().then((layouts) {
           if (layouts.contains(layout)) {
-            _viewerKey.currentState?.jumpToPage(page.pageIndex);
-            _onPageChanged(page.pageIndex);
+            _pdfController.goToPage(pageNumber: page.pageIndex + 1);
           }
         });
       }
     }
   }
 
-  void _onPageChanged(int pageIndex) {
-    _viewModel?.updateCurrentPage(pageIndex);
-  }
-
-  void _onScaleChanged(double scale) {
-    _viewModel?.updateZoom(scale);
-  }
-
   @override
   void dispose() {
+    _pdfController.removeListener(_onPdfControllerChanged);
     _viewModel?.removeListener(_handleViewModelChanges);
     _viewModel?.dispose();
     super.dispose();
@@ -135,12 +140,16 @@ class _PDFViewerState extends State<PDFViewer> {
                   children: [
                     // Main PDF Viewer Area
                     Expanded(
-                      child: PdfPageViewer(
-                        key: _viewerKey,
-                        document: _viewModel!.document!,
-                        pages: _viewModel!.pages,
-                        onScaleChanged: _onScaleChanged,
-                        onPageChanged: _onPageChanged,
+                      child: PdfViewer.file(
+                        widget.path,
+                        controller: _pdfController,
+                        params: PdfViewerParams(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.surfaceContainer,
+                          pageOverlaysBuilder: (context, pageRect, page) {
+                            return _buildPageOverlays(context, pageRect, page);
+                          },
+                        ),
                       ),
                     ),
                     // Bottom Status Bar
@@ -184,5 +193,68 @@ class _PDFViewerState extends State<PDFViewer> {
         );
       },
     );
+  }
+
+  List<Widget> _buildPageOverlays(
+    BuildContext context,
+    Rect pageRect,
+    PdfPage page,
+  ) {
+    // Get the current page index (PdfPage.pageNumber is 1-based)
+    final pageIndex = page.pageNumber - 1;
+
+    // Check if we have view model
+    if (_viewModel == null) {
+      return [];
+    }
+
+    // Get the corresponding PageModel from our model
+    if (pageIndex >= _viewModel!.pages.length) {
+      return [];
+    }
+    final pageModel = _viewModel!.pages[pageIndex];
+
+    // Get figure references for this page
+    final figureReferences = _viewModel!.getFigureReferencesForPage(pageIndex);
+
+    if (figureReferences.isEmpty) {
+      return [];
+    }
+
+    return figureReferences.map((reference) {
+      final rect = reference.rect;
+      // Convert PDF coordinates to Flutter coordinates
+      // PDF uses bottom-left origin, Flutter uses top-left
+      // pageRect gives us the actual rendered page dimensions
+      // Use PageModel's width and height properties instead of PdfPage's
+      final scaleX = pageRect.width / pageModel.width.toDouble();
+      final scaleY = pageRect.height / pageModel.height.toDouble();
+
+      // Use the same scale for both X and Y to maintain aspect ratio
+      final scale = scaleX < scaleY ? scaleX : scaleY;
+
+      final left = rect.left * scale;
+      // For PDF coordinates, rect.top is from bottom, so convert to top-left origin
+      final top = (pageModel.height - rect.top - rect.height) * scale;
+      final width = rect.width * scale;
+      final height = rect.height * scale;
+
+      return Positioned(
+        left: left,
+        top: top,
+        width: width,
+        height: height,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).colorScheme.secondary,
+              width: 2,
+            ),
+            borderRadius: BorderRadius.circular(4),
+            color: Colors.transparent,
+          ),
+        ),
+      );
+    }).toList();
   }
 }

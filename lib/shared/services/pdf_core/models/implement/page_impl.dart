@@ -21,8 +21,8 @@ class PageModel extends BasePage {
   @override
   final String fullText;
 
-  final double _width;
-  final double _height;
+  final int _width;
+  final int _height;
 
   // ====== 관계 ======
   @Backlink(to: 'page')
@@ -34,8 +34,8 @@ class PageModel extends BasePage {
   PageModel({
     required this.pageIndex,
     required this.fullText,
-    required double width,
-    required double height,
+    required int width,
+    required int height,
   }) : _width = width,
        _height = height;
 
@@ -43,18 +43,19 @@ class PageModel extends BasePage {
     required this.pageIndex,
     required this.fullText,
     required Size size,
-  }) : _width = size.width,
-       _height = size.height;
+  }) : _width = size.width.toInt(),
+       _height = size.height.toInt();
 
   // ====== 게터 ======
   @override
   @ignore
-  Size get size => Size(_width, _height);
-
+  Size get size => Size(_width.toDouble(), _height.toDouble());
+  @override
   @Name('width')
-  double get width => _width;
+  int get width => _width;
+  @override
   @Name('height')
-  double get height => _height;
+  int get height => _height;
 
   @override
   Future<List<LayoutModel>> getLayouts() async {

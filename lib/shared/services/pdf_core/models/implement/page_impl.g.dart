@@ -25,7 +25,7 @@ const PageModelSchema = CollectionSchema(
     r'height': PropertySchema(
       id: 1,
       name: r'height',
-      type: IsarType.double,
+      type: IsarType.long,
     ),
     r'page_index': PropertySchema(
       id: 2,
@@ -35,7 +35,7 @@ const PageModelSchema = CollectionSchema(
     r'width': PropertySchema(
       id: 3,
       name: r'width',
-      type: IsarType.double,
+      type: IsarType.long,
     )
   },
   estimateSize: _pageModelEstimateSize,
@@ -83,9 +83,9 @@ void _pageModelSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.fullText);
-  writer.writeDouble(offsets[1], object.height);
+  writer.writeLong(offsets[1], object.height);
   writer.writeLong(offsets[2], object.pageIndex);
-  writer.writeDouble(offsets[3], object.width);
+  writer.writeLong(offsets[3], object.width);
 }
 
 PageModel _pageModelDeserialize(
@@ -96,9 +96,9 @@ PageModel _pageModelDeserialize(
 ) {
   final object = PageModel(
     fullText: reader.readString(offsets[0]),
-    height: reader.readDouble(offsets[1]),
+    height: reader.readLong(offsets[1]),
     pageIndex: reader.readLong(offsets[2]),
-    width: reader.readDouble(offsets[3]),
+    width: reader.readLong(offsets[3]),
   );
   object.id = id;
   return object;
@@ -114,11 +114,11 @@ P _pageModelDeserializeProp<P>(
     case 0:
       return (reader.readString(offset)) as P;
     case 1:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 2:
       return (reader.readLong(offset)) as P;
     case 3:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -350,54 +350,46 @@ extension PageModelQueryFilter
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> heightEqualTo(
-    double value, {
-    double epsilon = Query.epsilon,
-  }) {
+      int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'height',
         value: value,
-        epsilon: epsilon,
       ));
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> heightGreaterThan(
-    double value, {
+    int value, {
     bool include = false,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
         property: r'height',
         value: value,
-        epsilon: epsilon,
       ));
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> heightLessThan(
-    double value, {
+    int value, {
     bool include = false,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
         property: r'height',
         value: value,
-        epsilon: epsilon,
       ));
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> heightBetween(
-    double lower,
-    double upper, {
+    int lower,
+    int upper, {
     bool includeLower = true,
     bool includeUpper = true,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
@@ -406,7 +398,6 @@ extension PageModelQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
-        epsilon: epsilon,
       ));
     });
   }
@@ -519,54 +510,46 @@ extension PageModelQueryFilter
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> widthEqualTo(
-    double value, {
-    double epsilon = Query.epsilon,
-  }) {
+      int value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'width',
         value: value,
-        epsilon: epsilon,
       ));
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> widthGreaterThan(
-    double value, {
+    int value, {
     bool include = false,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
         property: r'width',
         value: value,
-        epsilon: epsilon,
       ));
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> widthLessThan(
-    double value, {
+    int value, {
     bool include = false,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
         property: r'width',
         value: value,
-        epsilon: epsilon,
       ));
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> widthBetween(
-    double lower,
-    double upper, {
+    int lower,
+    int upper, {
     bool includeLower = true,
     bool includeUpper = true,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
@@ -575,7 +558,6 @@ extension PageModelQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
-        epsilon: epsilon,
       ));
     });
   }
@@ -815,7 +797,7 @@ extension PageModelQueryProperty
     });
   }
 
-  QueryBuilder<PageModel, double, QQueryOperations> heightProperty() {
+  QueryBuilder<PageModel, int, QQueryOperations> heightProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'height');
     });
@@ -827,7 +809,7 @@ extension PageModelQueryProperty
     });
   }
 
-  QueryBuilder<PageModel, double, QQueryOperations> widthProperty() {
+  QueryBuilder<PageModel, int, QQueryOperations> widthProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'width');
     });

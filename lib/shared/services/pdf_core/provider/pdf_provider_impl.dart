@@ -137,8 +137,8 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
           final pageModel = PageModel(
             pageIndex: pageDetail.pageIndex,
             fullText: pageDetail.fullText,
-            width: 0, // TODO: 실제 페이지 크기를 가져와야 함
-            height: 0, // TODO: 실제 페이지 크기를 가져와야 함
+            width: pageDetail.width,
+            height: pageDetail.height,
           );
 
           await _isar.pageModels.put(pageModel);

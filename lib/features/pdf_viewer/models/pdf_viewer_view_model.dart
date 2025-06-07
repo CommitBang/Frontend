@@ -11,6 +11,7 @@ class PdfViewerViewModel extends ChangeNotifier {
   BasePdf? _pdfModel;
   List<BasePage> _pages = [];
   List<BaseLayout> _layouts = [];
+  Map<int, List<BaseLayout>> _layoutsByPage = {};
 
   // UI state
   double _zoomPercent = 100.0;
@@ -56,6 +57,30 @@ class PdfViewerViewModel extends ChangeNotifier {
           )
           .toList();
 
+  // Get layouts for a specific page
+  List<BaseLayout> getLayoutsForPage(int pageIndex) {
+    return _layoutsByPage[pageIndex] ?? [];
+  }
+
+  // Get figure references for a specific page
+  List<BaseLayout> getFigureReferencesForPage(int pageIndex) {
+    return getLayoutsForPage(pageIndex)
+        .where((layout) => layout.type == LayoutType.figureReference)
+        .toList();
+  }
+
+  // Get all figure references
+  List<BaseLayout> get figureReferences =>
+      _layouts
+          .where((layout) => layout.type == LayoutType.figureReference)
+          .toList();
+
+  // Get all figures
+  List<BaseLayout> get figures =>
+      _layouts
+          .where((layout) => layout.type == LayoutType.figure)
+          .toList();
+
   // Methods
   Future<void> loadPdf({required String path, required bool isAsset}) async {
     try {
@@ -78,10 +103,12 @@ class PdfViewerViewModel extends ChangeNotifier {
       // 3. Load pages and layouts
       final pages = await model.getPages();
       final allLayouts = <BaseLayout>[];
+      final layoutsByPage = <int, List<BaseLayout>>{};
 
       for (final page in pages) {
         final layouts = await page.getLayouts();
         allLayouts.addAll(layouts);
+        layoutsByPage[page.pageIndex] = layouts;
       }
 
       // 4. Update state
@@ -89,6 +116,7 @@ class PdfViewerViewModel extends ChangeNotifier {
       _pdfModel = model;
       _pages = pages;
       _layouts = allLayouts;
+      _layoutsByPage = layoutsByPage;
       _currentPage = 1;
       _zoomPercent = 100.0;
       _pdfTitle = model.name;

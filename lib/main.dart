@@ -8,14 +8,10 @@ import 'package:snapfig/shared/services/ocr_core/ocr_core.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
 import 'core/theme/theme.dart';
 
-class ApiOCRProvider extends OCRProvider {
-  final _real = OCRProviderImpl(
-    baseUrl: 'https://901b-39-115-116-188.ngrok-free.app',
-  );
-
+class _DummyOCRProvider extends OCRProvider {
   @override
-  Future<OCRResult> process(String imagePath, {bool frontendFormat = true}) {
-    return _real.process(imagePath, frontendFormat: frontendFormat);
+  Future<OCRResult> process(String imagePath) async {
+    return OCRResult();
   }
 }
 
@@ -23,7 +19,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final dir = await getApplicationCacheDirectory();
   final pdfProvider = await PDFProviderImpl.load(
-    ocrProvider: ApiOCRProvider(),
+    ocrProvider: _DummyOCRProvider(),
     dbPath: dir.path,
   );
   runApp(SnapfigApp(pdfProvider: pdfProvider));

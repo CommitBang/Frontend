@@ -41,7 +41,7 @@ class OCRProviderImpl extends OCRProvider {
     // 2) task_id, stream_url 파싱
     final bodyJson = json.decode(analyzeRes.body) as Map<String, dynamic>;
     final taskId = bodyJson['task_id'] as String;
-    final streamUrl = bodyJson['stream_url'] as String;
+    final streamUrl = '$baseUrl/analyze/stream/$taskId';
 
     // 3) SSE 구독: analyze/stream/{taskId}
     final completer = Completer<void>();

@@ -199,7 +199,7 @@ class TextLayout extends LayoutItem {
               .map((e) => (e as num).toDouble())
               .toList(),
       text: json['text'] as String? ?? '',
-      confidence: (json['confidence'] as num).toDouble(),
+      confidence: ((json['confidence'] ?? 0) as num).toDouble(),
     );
   }
 }

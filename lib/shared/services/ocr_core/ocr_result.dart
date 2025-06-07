@@ -1,31 +1,66 @@
 // lib/shared/services/ocr_core/ocr_result.dart
 
-/// OCR 분석 결과 모델 (frontend‐friendly JSON)
+/// OCR 분석 결과 모델 (프론트엔드용)
 class OCRResult {
+  /// 문서 제목 (null 이거나 누락되면 빈 문자열)
   final String title;
+
+  /// 챕터 리스트
   final List<Chapter> chapters;
+
+  /// 페이지별 상세
   final List<PageDetail> pages;
+
+  /// 본문 중 Figure 객체
+  final List<Figure> figures;
+
+  /// 전체 메타데이터
   final Metadata metadata;
 
   OCRResult({
     required this.title,
     required this.chapters,
     required this.pages,
+    required this.figures,
     required this.metadata,
   });
 
   factory OCRResult.fromJson(Map<String, dynamic> json) {
+    // 1) title
+    final rawTitle = json['title'];
+    final title = rawTitle is String ? rawTitle : '';
+
+    // 2) chapters
+    final chaptersJson = json['chapters'] as List<dynamic>? ?? <dynamic>[];
+    final chapters =
+        chaptersJson
+            .map((e) => Chapter.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+    // 3) pages
+    final pagesJson = json['pages'] as List<dynamic>? ?? <dynamic>[];
+    final pages =
+        pagesJson
+            .map((e) => PageDetail.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+    // 4) figures
+    final figsJson = json['figures'] as List<dynamic>? ?? <dynamic>[];
+    final figures =
+        figsJson
+            .map((e) => Figure.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+    // 5) metadata
+    final metaJson = json['metadata'] as Map<String, dynamic>? ?? {};
+    final metadata = Metadata.fromJson(metaJson);
+
     return OCRResult(
-      title: json['title'] as String,
-      chapters:
-          (json['chapters'] as List)
-              .map((e) => Chapter.fromJson(e as Map<String, dynamic>))
-              .toList(),
-      pages:
-          (json['pages'] as List)
-              .map((e) => PageDetail.fromJson(e as Map<String, dynamic>))
-              .toList(),
-      metadata: Metadata.fromJson(json['metadata'] as Map<String, dynamic>),
+      title: title,
+      chapters: chapters,
+      pages: pages,
+      figures: figures,
+      metadata: metadata,
     );
   }
 }
@@ -33,32 +68,30 @@ class OCRResult {
 /// 챕터 정보
 class Chapter {
   final int chapterNumber;
-  final String? title;
+  final String title;
   final int startPage;
   final int endPage;
   final List<String> sections;
-  final int? figureCount;
 
   Chapter({
     required this.chapterNumber,
-    this.title,
+    required this.title,
     required this.startPage,
     required this.endPage,
     required this.sections,
-    this.figureCount,
   });
 
   factory Chapter.fromJson(Map<String, dynamic> json) {
     return Chapter(
-      chapterNumber: (json['chapter'] as num).toInt(),
-      title: json['title'] as String?,
+      chapterNumber: (json['chapter_number'] as num).toInt(),
+      title: (json['title'] as String?) ?? '',
       startPage: (json['start_page'] as num).toInt(),
       endPage: (json['end_page'] as num).toInt(),
-      sections: (json['sections'] as List).map((e) => e as String).toList(),
-      figureCount:
-          json['figure_count'] != null
-              ? (json['figure_count'] as num).toInt()
-              : null,
+      sections:
+          (json['sections'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          <String>[],
     );
   }
 }
@@ -66,26 +99,63 @@ class Chapter {
 /// 페이지 상세 정보
 class PageDetail {
   final int pageIndex;
-  final String chapter;
+  final String? chapter;
   final String? section;
   final List<LayoutItem> layouts;
+  final String fullText;
 
   PageDetail({
     required this.pageIndex,
-    required this.chapter,
+    this.chapter,
     this.section,
     required this.layouts,
+    required this.fullText,
   });
 
   factory PageDetail.fromJson(Map<String, dynamic> json) {
+    // layouts
+    final layoutsJson = json['layouts'] as List<dynamic>? ?? <dynamic>[];
+    final layouts =
+        layoutsJson
+            .map((e) => LayoutItem.fromJson(e as Map<String, dynamic>))
+            .toList();
+
     return PageDetail(
       pageIndex: (json['page_index'] as num).toInt(),
-      chapter: json['chapter'] as String,
+      chapter: json['chapter'] as String?,
       section: json['section'] as String?,
-      layouts:
-          (json['layouts'] as List)
-              .map((e) => LayoutItem.fromJson(e as Map<String, dynamic>))
+      layouts: layouts,
+      fullText: (json['full_text'] as String?) ?? '',
+    );
+  }
+}
+
+/// Figure 정보 (예시에선 빈 배열이지만 구조를 맞춰 파싱)
+class Figure {
+  final String id;
+  final List<double> boundingBox;
+  final String? caption;
+  final int? pageIndex;
+
+  Figure({
+    required this.id,
+    required this.boundingBox,
+    this.caption,
+    this.pageIndex,
+  });
+
+  factory Figure.fromJson(Map<String, dynamic> json) {
+    return Figure(
+      id: json['figure_id'] as String? ?? '',
+      boundingBox:
+          (json['bounding_box'] as List<dynamic>? ?? <dynamic>[])
+              .map((e) => (e as num).toDouble())
               .toList(),
+      caption: json['caption'] as String?,
+      pageIndex:
+          json['page_index'] != null
+              ? (json['page_index'] as num).toInt()
+              : null,
     );
   }
 }
@@ -128,13 +198,13 @@ class TextLayout extends LayoutItem {
           (json['bounding_box'] as List<dynamic>)
               .map((e) => (e as num).toDouble())
               .toList(),
-      text: json['text'] as String,
+      text: json['text'] as String? ?? '',
       confidence: (json['confidence'] as num).toDouble(),
     );
   }
 }
 
-/// 피겨 레이아웃
+/// Figure 레이아웃 (본문 내 그림 박스)
 class FigureLayoutItem extends LayoutItem {
   final String figureId;
   final String caption;
@@ -154,22 +224,24 @@ class FigureLayoutItem extends LayoutItem {
               .map((e) => (e as num).toDouble())
               .toList(),
       figureId: json['figure_id'] as String,
-      caption: json['figure_caption'] as String,
+      caption: json['caption'] as String,
       figureNumber: (json['figure_number'] as num).toInt(),
     );
   }
 }
 
-/// 피겨 참조 레이아웃
+/// Figure 참조 레이아웃 (본문 내 그림 언급)
 class FigureReferenceLayout extends LayoutItem {
   final String referencedFigureId;
   final String referenceText;
+  final int figureNumber;
   final double confidence;
 
   FigureReferenceLayout({
     required super.boundingBox,
     required this.referencedFigureId,
     required this.referenceText,
+    required this.figureNumber,
     required this.confidence,
   }) : super(type: 'figure_reference');
 
@@ -181,6 +253,7 @@ class FigureReferenceLayout extends LayoutItem {
               .toList(),
       referencedFigureId: json['referenced_figure_id'] as String,
       referenceText: json['reference_text'] as String,
+      figureNumber: (json['figure_number'] as num).toInt(),
       confidence: (json['confidence'] as num).toDouble(),
     );
   }

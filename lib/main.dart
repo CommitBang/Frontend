@@ -8,18 +8,11 @@ import 'package:snapfig/shared/services/ocr_core/ocr_core.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
 import 'core/theme/theme.dart';
 
-class _DummyOCRProvider extends OCRProvider {
-  @override
-  Future<OCRResult> process(String imagePath) async {
-    return OCRResult();
-  }
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final dir = await getApplicationCacheDirectory();
   final pdfProvider = await PDFProviderImpl.load(
-    ocrProvider: _DummyOCRProvider(),
+    ocrProvider: OCRProviderImpl(baseUrl: ''),
     dbPath: dir.path,
   );
   runApp(SnapfigApp(pdfProvider: pdfProvider));

@@ -57,5 +57,9 @@ class PageModel extends BasePage {
   double get height => _height;
 
   @override
-  Future<List<LayoutModel>> getLayouts() async => [];
+  Future<List<LayoutModel>> getLayouts() async {
+    // Isar의 백링크를 통해 레이아웃들을 로드
+    await layouts.load();
+    return layouts.toList();
+  }
 }

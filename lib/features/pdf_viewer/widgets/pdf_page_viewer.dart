@@ -170,45 +170,62 @@ class PdfPageViewerState extends State<PdfPageViewer> {
                       document: widget.document,
                       pageNumber: index + 1,
                       decorationBuilder: (context, pageSize, page, pageImage) {
-                        if (widget.pages == null || index >= widget.pages!.length) {
+                        if (widget.pages == null ||
+                            index >= widget.pages!.length) {
                           return const SizedBox();
                         }
-                        
+
                         return FutureBuilder<List<BaseLayout>>(
                           future: widget.pages![index].getLayouts(),
                           builder: (context, snapshot) {
                             if (!snapshot.hasData) return const SizedBox();
-                            
-                            final figureReferences = snapshot.data!
-                                .where((layout) => layout.type == LayoutType.figureReference)
-                                .toList();
-                            
-                            if (figureReferences.isEmpty) return const SizedBox();
-                            
+
+                            final figureReferences =
+                                snapshot.data!
+                                    .where(
+                                      (layout) =>
+                                          layout.type ==
+                                          LayoutType.figureReference,
+                                    )
+                                    .toList();
+
+                            if (figureReferences.isEmpty) {
+                              return const SizedBox();
+                            }
+
                             return Stack(
-                              children: figureReferences.map((reference) {
-                                final rect = reference.rect;
-                                // Convert PDF coordinates to Flutter coordinates
-                                // PDF uses bottom-left origin, Flutter uses top-left
-                                final top = pageSize.height - rect.bottom;
-                                
-                                return Positioned(
-                                  left: rect.left,
-                                  top: top,
-                                  width: rect.width,
-                                  height: rect.height,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: Theme.of(context).colorScheme.secondary,
-                                        width: 2,
+                              children:
+                                  figureReferences.map((reference) {
+                                    final rect = reference.rect;
+                                    // Convert PDF coordinates to Flutter coordinates
+                                    // PDF uses bottom-left origin, Flutter uses top-left
+                                    final top = pageSize.height - rect.bottom;
+
+                                    return Positioned(
+                                      left: rect.left,
+                                      top: top,
+                                      width: rect.width,
+                                      height: rect.height,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.secondary,
+                                            width: 2,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary
+                                              .withOpacity(0.1),
+                                        ),
                                       ),
-                                      borderRadius: BorderRadius.circular(4),
-                                      color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
+                                    );
+                                  }).toList(),
                             );
                           },
                         );

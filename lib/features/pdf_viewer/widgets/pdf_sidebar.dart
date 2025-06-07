@@ -144,10 +144,12 @@ class _LayoutListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final figures =
+        layouts.where((layout) => layout.type == LayoutType.figure).toList();
     return ListView.builder(
-      itemCount: layouts.length,
+      itemCount: figures.length,
       itemBuilder: (context, index) {
-        final layout = layouts[index];
+        final layout = figures[index];
         return ListTile(
           leading: _buildLayoutThumbnail(layout),
           title: Text(

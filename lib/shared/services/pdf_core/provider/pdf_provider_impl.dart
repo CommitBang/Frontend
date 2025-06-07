@@ -88,6 +88,7 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   // 주어진 PDF에 대한 OCR을 진행합니다. 이때 독립된 isolate로 변경이 되고,
   // 처리 결과는 주 스레드에서 처리됩니다.
   Future<void> _processPdfWithOcr(PDFModel pdf) async {
+    _logger.severe('process OCR');
     await updatePDF(id: pdf.id, status: PDFStatus.processing);
     final receivePort = ReceivePort();
     await Isolate.spawn(_ocrProcess, [
@@ -130,11 +131,6 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
 
     try {
       await _isar.writeTxn(() async {
-        // 1. PDF 제목 업데이트 (OCR 결과에 제목이 있으면)
-        if (ocrResult.title.isNotEmpty) {
-          pdf.update(name: ocrResult.title);
-        }
-
         // 2. 페이지별 데이터 저장
         for (final pageDetail in ocrResult.pages) {
           // 페이지 모델 생성

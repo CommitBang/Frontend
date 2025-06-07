@@ -223,9 +223,9 @@ class FigureLayoutItem extends LayoutItem {
           (json['bounding_box'] as List<dynamic>)
               .map((e) => (e as num).toDouble())
               .toList(),
-      figureId: json['figure_id'] as String,
-      caption: json['caption'] as String,
-      figureNumber: (json['figure_number'] as num).toInt(),
+      figureId: (json['figure_id'] ?? '') as String,
+      caption: (json['caption'] ?? '') as String,
+      figureNumber: ((json['figure_number'] ?? 0) as num).toInt(),
     );
   }
 }
@@ -254,7 +254,7 @@ class FigureReferenceLayout extends LayoutItem {
       referencedFigureId: json['referenced_figure_id'] as String,
       referenceText: json['reference_text'] as String,
       figureNumber: (json['figure_number'] as num).toInt(),
-      confidence: (json['confidence'] as num).toDouble(),
+      confidence: ((json['confidence'] ?? 0) as num).toDouble(),
     );
   }
 }

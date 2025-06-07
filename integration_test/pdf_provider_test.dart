@@ -24,6 +24,7 @@ class DummyOcrService implements OCRProvider {
       title: 'test',
       chapters: [],
       pages: [],
+      figures: [],
       metadata: Metadata(totalPages: 0, processingTime: 0, totalFigures: 0),
     );
   }

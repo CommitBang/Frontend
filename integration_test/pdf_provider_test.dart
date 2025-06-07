@@ -20,7 +20,12 @@ Future<String> copyAssetToLocal(String assetPath) async {
 class DummyOcrService implements OCRProvider {
   @override
   Future<OCRResult> process(String pdfPath) async {
-    return OCRResult();
+    return OCRResult(
+      title: 'test',
+      chapters: [],
+      pages: [],
+      metadata: Metadata(totalPages: 0, processingTime: 0, totalFigures: 0),
+    );
   }
 }
 

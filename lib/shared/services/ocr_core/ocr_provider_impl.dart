@@ -10,6 +10,8 @@ import 'package:http/http.dart' as http;
 import 'package:snapfig/shared/services/ocr_core/ocr_provider.dart';
 import 'package:snapfig/shared/services/ocr_core/ocr_result.dart';
 
+import 'package:path/path.dart' as path_lib;
+
 class OCRProviderImpl extends OCRProvider {
   final String baseUrl;
   final http.Client httpClient;
@@ -22,14 +24,16 @@ class OCRProviderImpl extends OCRProvider {
     // 1) 분석 요청
     final analyzeUri = Uri.parse('$baseUrl/analyze/pdf?format=frontend');
     final pdfBytes = await File(pdfPath).readAsBytes();
-    final analyzeRes = await httpClient.post(
-      analyzeUri,
-      headers: {
-        HttpHeaders.acceptHeader: 'application/json',
-        HttpHeaders.contentTypeHeader: 'application/pdf',
-      },
-      body: pdfBytes,
-    );
+    final request = http.MultipartRequest('POST', analyzeUri)
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          pdfBytes,
+          filename: path_lib.basename(pdfPath),
+        ),
+      );
+    final response = await httpClient.send(request);
+    final analyzeRes = await http.Response.fromStream(response);
     if (analyzeRes.statusCode != 202) {
       throw Exception('OCR API 요청 실패: HTTP ${analyzeRes.statusCode}');
     }

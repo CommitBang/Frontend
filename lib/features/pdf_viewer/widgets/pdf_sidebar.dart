@@ -165,21 +165,35 @@ class _LayoutListView extends StatelessWidget {
   Widget _buildLayoutThumbnail(BaseLayout layout) {
     // For now, use a placeholder based on layout type
     IconData icon;
+    Color? backgroundColor;
     switch (layout.type) {
       case LayoutType.formula:
         icon = Icons.functions;
+        backgroundColor = Colors.blue[100];
         break;
       case LayoutType.text:
         icon = Icons.text_fields;
+        backgroundColor = Colors.grey[300];
         break;
       case LayoutType.header:
         icon = Icons.title;
+        backgroundColor = Colors.indigo[100];
         break;
       case LayoutType.algorithm:
         icon = Icons.code;
+        backgroundColor = Colors.green[100];
         break;
       case LayoutType.number:
         icon = Icons.numbers;
+        backgroundColor = Colors.orange[100];
+        break;
+      case LayoutType.figure:
+        icon = Icons.image;
+        backgroundColor = Colors.purple[100];
+        break;
+      case LayoutType.figureReference:
+        icon = Icons.link;
+        backgroundColor = Colors.teal[100];
         break;
     }
 
@@ -187,10 +201,26 @@ class _LayoutListView extends StatelessWidget {
       width: 60,
       height: 60,
       decoration: BoxDecoration(
-        color: Colors.grey[300],
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Icon(icon, color: Colors.grey),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.grey[700]),
+          if (layout.type == LayoutType.figure && layout.figureNumber != null)
+            Text(
+              'Fig ${layout.figureNumber}',
+              style: const TextStyle(fontSize: 10, color: Colors.black54),
+            ),
+          if (layout.type == LayoutType.figureReference &&
+              layout.figureNumber != null)
+            Text(
+              'Ref ${layout.figureNumber}',
+              style: const TextStyle(fontSize: 10, color: Colors.black54),
+            ),
+        ],
+      ),
     );
   }
 }

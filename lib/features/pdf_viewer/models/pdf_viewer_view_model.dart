@@ -76,6 +76,37 @@ class PdfViewerViewModel extends ChangeNotifier {
   List<BaseLayout> get figures =>
       _layouts.where((layout) => layout.type == LayoutType.figure).toList();
 
+  // Find figure by ID
+  BaseLayout? findFigureById(String figureId) {
+    try {
+      return figures.firstWhere(
+        (figure) => figure.figureId == figureId,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Find figure by referenced figure ID
+  BaseLayout? findFigureByReference(BaseLayout reference) {
+    if (reference.type != LayoutType.figureReference) return null;
+    final referencedId = reference.referencedFigureId;
+    if (referencedId == null) return null;
+    return findFigureById(referencedId);
+  }
+
+  // Get page containing a specific layout
+  BasePage? getPageForLayout(BaseLayout layout) {
+    for (final entry in _layoutsByPage.entries) {
+      if (entry.value.contains(layout)) {
+        return _pages.firstWhere(
+          (page) => page.pageIndex == entry.key,
+        );
+      }
+    }
+    return null;
+  }
+
   // Methods
   Future<void> loadPdf({required String path, required bool isAsset}) async {
     try {

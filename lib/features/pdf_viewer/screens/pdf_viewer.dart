@@ -222,7 +222,8 @@ class _PDFViewerState extends State<PDFViewer> {
             return GestureDetector(
               onTap: () {
                 // Get the render box of this specific widget
-                final RenderBox renderBox = innerContext.findRenderObject() as RenderBox;
+                final RenderBox renderBox =
+                    innerContext.findRenderObject() as RenderBox;
                 // Calculate center position in local coordinates
                 final localCenter = Offset(width / 2, height / 2);
                 // Convert to global coordinates
@@ -232,11 +233,15 @@ class _PDFViewerState extends State<PDFViewer> {
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.secondary.withOpacity(0.7),
                     width: 2,
                   ),
                   borderRadius: BorderRadius.circular(4),
-                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.secondary.withOpacity(0.1),
                 ),
               ),
             );
@@ -272,13 +277,14 @@ class _PDFViewerState extends State<PDFViewer> {
     late OverlayEntry overlayEntry;
 
     overlayEntry = OverlayEntry(
-      builder: (context) => _FigurePopupOverlay(
-        figure: figure,
-        figurePage: figurePage,
-        targetPosition: globalPosition,
-        onClose: () => overlayEntry.remove(),
-        renderFigure: _renderFigure,
-      ),
+      builder:
+          (context) => _FigurePopupOverlay(
+            figure: figure,
+            figurePage: figurePage,
+            targetPosition: globalPosition,
+            onClose: () => overlayEntry.remove(),
+            renderFigure: _renderFigure,
+          ),
     );
 
     overlay.insert(overlayEntry);

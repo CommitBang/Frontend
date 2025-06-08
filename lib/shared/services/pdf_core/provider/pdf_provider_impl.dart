@@ -271,13 +271,13 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
       await _isar.writeTxn(() async {
         await _isar.pDFModels.put(pdf);
       });
-      _processPdfWithOcr(pdf);
       final pdfInfo = await _getPDFInfo(filePath);
       await updatePDF(
         id: pdf.id,
         thumbnail: pdfInfo.thumbnail,
         totalPages: pdfInfo.totalPages,
       );
+      _processPdfWithOcr(pdf);
     } catch (e) {
       _logger.severe('Failed to add PDF: $e');
     }

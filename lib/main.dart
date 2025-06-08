@@ -1,5 +1,7 @@
 // lib/main.dart
 
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:snapfig/features/home/screens/home_widget.dart';
@@ -29,6 +31,15 @@ class SnapfigApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return InheritedPDFProviderWidget(
+      provider: _pdfProvider,
+      child: MaterialApp(
+        title: 'Snapfig',
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        navigatorKey: _navigationService.navigatorKey,
+        home: const HomeWidget(),
+      ),
     return InheritedPDFProviderWidget(
       provider: _pdfProvider,
       child: MaterialApp(

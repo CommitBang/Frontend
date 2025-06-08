@@ -7,7 +7,6 @@ import '../../../shared/services/pdf_core/pdf_core.dart';
 
 class PdfViewerViewModel extends ChangeNotifier {
   // Private state
-  PdfDocument? _document;
   BasePdf? _pdfModel;
   List<BasePage> _pages = [];
   List<BaseLayout> _layouts = [];
@@ -29,8 +28,6 @@ class PdfViewerViewModel extends ChangeNotifier {
   PdfViewerViewModel({required PDFProvider pdfProvider})
     : _pdfProvider = pdfProvider;
 
-  // Getters
-  PdfDocument? get document => _document;
   BasePdf? get pdfModel => _pdfModel;
   List<BasePage> get pages => _pages;
   List<BaseLayout> get layouts => _layouts;
@@ -64,9 +61,9 @@ class PdfViewerViewModel extends ChangeNotifier {
 
   // Get figure references for a specific page
   List<BaseLayout> getFigureReferencesForPage(int pageIndex) {
-    return getLayoutsForPage(pageIndex)
-        .where((layout) => layout.type == LayoutType.figureReference)
-        .toList();
+    return getLayoutsForPage(
+      pageIndex,
+    ).where((layout) => layout.type == LayoutType.figureReference).toList();
   }
 
   // Get all figure references
@@ -77,21 +74,13 @@ class PdfViewerViewModel extends ChangeNotifier {
 
   // Get all figures
   List<BaseLayout> get figures =>
-      _layouts
-          .where((layout) => layout.type == LayoutType.figure)
-          .toList();
+      _layouts.where((layout) => layout.type == LayoutType.figure).toList();
 
   // Methods
   Future<void> loadPdf({required String path, required bool isAsset}) async {
     try {
       _setLoading(true);
       _clearError();
-
-      // 1. Load document using pdfrx
-      final doc =
-          isAsset
-              ? await PdfDocument.openAsset(path)
-              : await PdfDocument.openFile(path);
 
       // 2. Get PDF from provider by path
       final model = await _pdfProvider.getPDF(path);
@@ -112,7 +101,6 @@ class PdfViewerViewModel extends ChangeNotifier {
       }
 
       // 4. Update state
-      _document = doc;
       _pdfModel = model;
       _pages = pages;
       _layouts = allLayouts;

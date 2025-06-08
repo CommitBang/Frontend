@@ -10,20 +10,26 @@ class NoPdfLoadedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.picture_as_pdf, size: kIconSize, color: Colors.grey),
-          SizedBox(height: kSpacingLarge),
-          Text(
+          const Icon(Icons.picture_as_pdf, size: kIconSize, color: Colors.grey),
+          const SizedBox(height: kSpacingLarge),
+          const Text(
             'No PDF loaded',
             style: TextStyle(fontSize: kFontSize, color: Colors.grey),
           ),
-          SizedBox(height: kSpacingSmall),
-          Text(
+          const SizedBox(height: kSpacingSmall),
+          const Text(
             'Open a PDF file to get started',
             style: TextStyle(color: Colors.grey),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('Close'),
           ),
         ],
       ),

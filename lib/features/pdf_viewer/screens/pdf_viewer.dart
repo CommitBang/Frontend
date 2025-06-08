@@ -39,36 +39,12 @@ class _PDFViewerState extends State<PDFViewer> {
         _viewModel = PdfViewerViewModel(pdfProvider: pdfProvider);
       });
 
-      // Listen for errors
-      _viewModel!.addListener(_handleViewModelChanges);
-
       // Load initial PDF
       _viewModel!.loadPdf(path: widget.path, isAsset: widget.isAsset);
     });
 
     // Listen to PDF controller for page changes
     _pdfController.addListener(_onPdfControllerChanged);
-  }
-
-  void _handleViewModelChanges() {
-    // Show error snackbar if there's an error
-    if (_viewModel?.errorMessage != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _viewModel!.errorMessage!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onErrorContainer,
-              ),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.errorContainer,
-          ),
-        );
-        // Clear the error after showing
-        _viewModel!.clearError();
-      });
-    }
   }
 
   void _onPdfControllerChanged() {
@@ -105,7 +81,6 @@ class _PDFViewerState extends State<PDFViewer> {
   @override
   void dispose() {
     _pdfController.removeListener(_onPdfControllerChanged);
-    _viewModel?.removeListener(_handleViewModelChanges);
     _viewModel?.dispose();
     super.dispose();
   }
@@ -127,7 +102,7 @@ class _PDFViewerState extends State<PDFViewer> {
           );
         }
         // 2. PDF 미로딩 상태
-        if (_viewModel!.document == null) {
+        if (_viewModel!.errorMessage != null) {
           return const Scaffold(body: NoPdfLoadedView());
         }
         // 3. 정상 상태
@@ -212,7 +187,9 @@ class _PDFViewerState extends State<PDFViewer> {
     if (pageIndex >= _viewModel!.pages.length) {
       return [];
     }
-    final pageModel = _viewModel!.pages[pageIndex];
+    final pageModel = _viewModel!.pages.firstWhere(
+      (page) => page.pageIndex == pageIndex,
+    );
 
     // Get figure references for this page
     final figureReferences = _viewModel!.getFigureReferencesForPage(pageIndex);
@@ -221,37 +198,39 @@ class _PDFViewerState extends State<PDFViewer> {
       return [];
     }
 
+    // scaleX, scaleY 각각 적용
+    final scaleX = pageRect.width / pageModel.width.toDouble();
+    final scaleY = pageRect.height / pageModel.height.toDouble();
+
     return figureReferences.map((reference) {
       final rect = reference.rect;
-      // Convert PDF coordinates to Flutter coordinates
-      // PDF uses bottom-left origin, Flutter uses top-left
-      // pageRect gives us the actual rendered page dimensions
-      // Use PageModel's width and height properties instead of PdfPage's
-      final scaleX = pageRect.width / pageModel.width.toDouble();
-      final scaleY = pageRect.height / pageModel.height.toDouble();
 
-      // Use the same scale for both X and Y to maintain aspect ratio
-      final scale = scaleX < scaleY ? scaleX : scaleY;
-
-      final left = rect.left * scale;
-      // For PDF coordinates, rect.top is from bottom, so convert to top-left origin
-      final top = (pageModel.height - rect.top - rect.height) * scale;
-      final width = rect.width * scale;
-      final height = rect.height * scale;
+      // Direct coordinate transformation without Y-axis flip
+      // The OCR coordinates appear to use top-left origin like Flutter
+      final left = (rect.left * scaleX);
+      final top = (rect.top * scaleY);
+      final width = rect.width * scaleX;
+      final height = rect.height * scaleY;
 
       return Positioned(
         left: left,
         top: top,
         width: width,
         height: height,
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Theme.of(context).colorScheme.secondary,
-              width: 2,
+        child: GestureDetector(
+          onTap: () {
+            // TODO: Show figure popup when tapped
+            print('Figure reference tapped: ${reference.referenceText}');
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).colorScheme.secondary.withOpacity(0.7),
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(4),
+              color: Theme.of(context).colorScheme.secondary.withOpacity(0.1),
             ),
-            borderRadius: BorderRadius.circular(4),
-            color: Colors.transparent,
           ),
         ),
       );

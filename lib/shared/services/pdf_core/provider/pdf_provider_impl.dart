@@ -63,14 +63,6 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
       _pdfs = await _getAllPdfs();
       _logger.info('PDFs are changed.');
       notifyListeners();
-      // OCR 처리 대기 목록 처리
-      final pendingPdfs = await _getPendingPdfs();
-      for (final pdf in pendingPdfs) {
-        if (!_processing.contains(pdf.id)) {
-          _processing.add(pdf.id);
-          _processPdfWithOcr(pdf);
-        }
-      }
     });
   }
 
@@ -279,6 +271,7 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
       await _isar.writeTxn(() async {
         await _isar.pDFModels.put(pdf);
       });
+      _processPdfWithOcr(pdf);
       final pdfInfo = await _getPDFInfo(filePath);
       await updatePDF(
         id: pdf.id,

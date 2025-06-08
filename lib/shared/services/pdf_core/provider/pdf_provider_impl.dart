@@ -272,6 +272,7 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
         await _isar.pDFModels.put(pdf);
       });
       final pdfInfo = await _getPDFInfo(filePath);
+      pdf.thumbnail = pdfInfo.thumbnail;
       await updatePDF(
         id: pdf.id,
         thumbnail: pdfInfo.thumbnail,

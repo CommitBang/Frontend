@@ -27,4 +27,7 @@ abstract class PDFProvider extends ChangeNotifier {
     PDFStatus? status,
     int? limit,
   });
+
+  /// 경로로 PDF 조회 (Isar DB에서 조회, 없으면 null 반환)
+  Future<BasePdf?> getPDF(String path);
 }

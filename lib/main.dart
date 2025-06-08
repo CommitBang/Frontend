@@ -1,5 +1,7 @@
 // lib/main.dart
 
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:snapfig/features/home/screens/home_widget.dart';
@@ -8,18 +10,13 @@ import 'package:snapfig/shared/services/ocr_core/ocr_core.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
 import 'core/theme/theme.dart';
 
-class _DummyOCRProvider extends OCRProvider {
-  @override
-  Future<OCRResult> process(String imagePath) async {
-    return OCRResult();
-  }
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final dir = await getApplicationCacheDirectory();
   final pdfProvider = await PDFProviderImpl.load(
-    ocrProvider: _DummyOCRProvider(),
+    ocrProvider: OCRProviderImpl(
+      baseUrl: 'https://901b-39-115-116-188.ngrok-free.app',
+    ),
     dbPath: dir.path,
   );
   runApp(SnapfigApp(pdfProvider: pdfProvider));
@@ -34,6 +31,15 @@ class SnapfigApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return InheritedPDFProviderWidget(
+      provider: _pdfProvider,
+      child: MaterialApp(
+        title: 'Snapfig',
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        navigatorKey: _navigationService.navigatorKey,
+        home: const HomeWidget(),
+      ),
     return InheritedPDFProviderWidget(
       provider: _pdfProvider,
       child: MaterialApp(

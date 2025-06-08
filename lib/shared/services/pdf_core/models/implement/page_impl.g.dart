@@ -22,21 +22,13 @@ const PageModelSchema = CollectionSchema(
       name: r'full_text',
       type: IsarType.string,
     ),
-    r'height': PropertySchema(
-      id: 1,
-      name: r'height',
-      type: IsarType.double,
-    ),
+    r'height': PropertySchema(id: 1, name: r'height', type: IsarType.long),
     r'page_index': PropertySchema(
       id: 2,
       name: r'page_index',
       type: IsarType.long,
     ),
-    r'width': PropertySchema(
-      id: 3,
-      name: r'width',
-      type: IsarType.double,
-    )
+    r'width': PropertySchema(id: 3, name: r'width', type: IsarType.long),
   },
   estimateSize: _pageModelEstimateSize,
   serialize: _pageModelSerialize,
@@ -57,7 +49,7 @@ const PageModelSchema = CollectionSchema(
       name: r'pdf',
       target: r'pdf',
       single: true,
-    )
+    ),
   },
   embeddedSchemas: {},
   getId: _pageModelGetId,
@@ -83,9 +75,9 @@ void _pageModelSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.fullText);
-  writer.writeDouble(offsets[1], object.height);
+  writer.writeLong(offsets[1], object.height);
   writer.writeLong(offsets[2], object.pageIndex);
-  writer.writeDouble(offsets[3], object.width);
+  writer.writeLong(offsets[3], object.width);
 }
 
 PageModel _pageModelDeserialize(
@@ -96,9 +88,9 @@ PageModel _pageModelDeserialize(
 ) {
   final object = PageModel(
     fullText: reader.readString(offsets[0]),
-    height: reader.readDouble(offsets[1]),
+    height: reader.readLong(offsets[1]),
     pageIndex: reader.readLong(offsets[2]),
-    width: reader.readDouble(offsets[3]),
+    width: reader.readLong(offsets[3]),
   );
   object.id = id;
   return object;
@@ -114,11 +106,11 @@ P _pageModelDeserializeProp<P>(
     case 0:
       return (reader.readString(offset)) as P;
     case 1:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 2:
       return (reader.readLong(offset)) as P;
     case 3:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -134,8 +126,12 @@ List<IsarLinkBase<dynamic>> _pageModelGetLinks(PageModel object) {
 
 void _pageModelAttach(IsarCollection<dynamic> col, Id id, PageModel object) {
   object.id = id;
-  object.layouts
-      .attach(col, col.isar.collection<LayoutModel>(), r'layouts', id);
+  object.layouts.attach(
+    col,
+    col.isar.collection<LayoutModel>(),
+    r'layouts',
+    id,
+  );
   object.pdf.attach(col, col.isar.collection<PDFModel>(), r'pdf', id);
 }
 
@@ -152,10 +148,7 @@ extension PageModelQueryWhere
     on QueryBuilder<PageModel, PageModel, QWhereClause> {
   QueryBuilder<PageModel, PageModel, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: id,
-        upper: id,
-      ));
+      return query.addWhereClause(IdWhereClause.between(lower: id, upper: id));
     });
   }
 
@@ -181,8 +174,10 @@ extension PageModelQueryWhere
     });
   }
 
-  QueryBuilder<PageModel, PageModel, QAfterWhereClause> idGreaterThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<PageModel, PageModel, QAfterWhereClause> idGreaterThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.greaterThan(lower: id, includeLower: include),
@@ -190,8 +185,10 @@ extension PageModelQueryWhere
     });
   }
 
-  QueryBuilder<PageModel, PageModel, QAfterWhereClause> idLessThan(Id id,
-      {bool include = false}) {
+  QueryBuilder<PageModel, PageModel, QAfterWhereClause> idLessThan(
+    Id id, {
+    bool include = false,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         IdWhereClause.lessThan(upper: id, includeUpper: include),
@@ -206,12 +203,14 @@ extension PageModelQueryWhere
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addWhereClause(IdWhereClause.between(
-        lower: lowerId,
-        includeLower: includeLower,
-        upper: upperId,
-        includeUpper: includeUpper,
-      ));
+      return query.addWhereClause(
+        IdWhereClause.between(
+          lower: lowerId,
+          includeLower: includeLower,
+          upper: upperId,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 }
@@ -223,11 +222,13 @@ extension PageModelQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'full_text',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(
+          property: r'full_text',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -237,12 +238,14 @@ extension PageModelQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'full_text',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'full_text',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -252,12 +255,14 @@ extension PageModelQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'full_text',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'full_text',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -269,14 +274,16 @@ extension PageModelQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'full_text',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'full_text',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -285,11 +292,13 @@ extension PageModelQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'full_text',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.startsWith(
+          property: r'full_text',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
@@ -298,126 +307,129 @@ extension PageModelQueryFilter
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'full_text',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.endsWith(
+          property: r'full_text',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> fullTextContains(
-      String value,
-      {bool caseSensitive = true}) {
+    String value, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'full_text',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.contains(
+          property: r'full_text',
+          value: value,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> fullTextMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
+    String pattern, {
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'full_text',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.matches(
+          property: r'full_text',
+          wildcard: pattern,
+          caseSensitive: caseSensitive,
+        ),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> fullTextIsEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'full_text',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'full_text', value: ''),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition>
-      fullTextIsNotEmpty() {
+  fullTextIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'full_text',
-        value: '',
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(property: r'full_text', value: ''),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> heightEqualTo(
-    double value, {
-    double epsilon = Query.epsilon,
-  }) {
+    int value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'height',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'height', value: value),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> heightGreaterThan(
-    double value, {
+    int value, {
     bool include = false,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'height',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'height',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> heightLessThan(
-    double value, {
+    int value, {
     bool include = false,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'height',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'height',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> heightBetween(
-    double lower,
-    double upper, {
+    int lower,
+    int upper, {
     bool includeLower = true,
     bool includeUpper = true,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'height',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'height',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> idEqualTo(
-      Id value) {
+    Id value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'id', value: value),
+      );
     });
   }
 
@@ -426,11 +438,13 @@ extension PageModelQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -439,11 +453,13 @@ extension PageModelQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'id',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'id',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -454,37 +470,38 @@ extension PageModelQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'id',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'id',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> pageIndexEqualTo(
-      int value) {
+    int value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'page_index',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'page_index', value: value),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition>
-      pageIndexGreaterThan(
-    int value, {
-    bool include = false,
-  }) {
+  pageIndexGreaterThan(int value, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'page_index',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'page_index',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -493,11 +510,13 @@ extension PageModelQueryFilter
     bool include = false,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'page_index',
-        value: value,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'page_index',
+          value: value,
+        ),
+      );
     });
   }
 
@@ -508,75 +527,74 @@ extension PageModelQueryFilter
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'page_index',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'page_index',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> widthEqualTo(
-    double value, {
-    double epsilon = Query.epsilon,
-  }) {
+    int value,
+  ) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'width',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'width', value: value),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> widthGreaterThan(
-    double value, {
+    int value, {
     bool include = false,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'width',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.greaterThan(
+          include: include,
+          property: r'width',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> widthLessThan(
-    double value, {
+    int value, {
     bool include = false,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'width',
-        value: value,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.lessThan(
+          include: include,
+          property: r'width',
+          value: value,
+        ),
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> widthBetween(
-    double lower,
-    double upper, {
+    int lower,
+    int upper, {
     bool includeLower = true,
     bool includeUpper = true,
-    double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'width',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        epsilon: epsilon,
-      ));
+      return query.addFilterCondition(
+        FilterCondition.between(
+          property: r'width',
+          lower: lower,
+          includeLower: includeLower,
+          upper: upper,
+          includeUpper: includeUpper,
+        ),
+      );
     });
   }
 }
@@ -587,14 +605,15 @@ extension PageModelQueryObject
 extension PageModelQueryLinks
     on QueryBuilder<PageModel, PageModel, QFilterCondition> {
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> layouts(
-      FilterQuery<LayoutModel> q) {
+    FilterQuery<LayoutModel> q,
+  ) {
     return QueryBuilder.apply(this, (query) {
       return query.link(q, r'layouts');
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition>
-      layoutsLengthEqualTo(int length) {
+  layoutsLengthEqualTo(int length) {
     return QueryBuilder.apply(this, (query) {
       return query.linkLength(r'layouts', length, true, length, true);
     });
@@ -607,34 +626,28 @@ extension PageModelQueryLinks
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition>
-      layoutsIsNotEmpty() {
+  layoutsIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.linkLength(r'layouts', 0, false, 999999, true);
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition>
-      layoutsLengthLessThan(
-    int length, {
-    bool include = false,
-  }) {
+  layoutsLengthLessThan(int length, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.linkLength(r'layouts', 0, true, length, include);
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition>
-      layoutsLengthGreaterThan(
-    int length, {
-    bool include = false,
-  }) {
+  layoutsLengthGreaterThan(int length, {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.linkLength(r'layouts', length, include, 999999, true);
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition>
-      layoutsLengthBetween(
+  layoutsLengthBetween(
     int lower,
     int upper, {
     bool includeLower = true,
@@ -642,12 +655,18 @@ extension PageModelQueryLinks
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.linkLength(
-          r'layouts', lower, includeLower, upper, includeUpper);
+        r'layouts',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
     });
   }
 
   QueryBuilder<PageModel, PageModel, QAfterFilterCondition> pdf(
-      FilterQuery<PDFModel> q) {
+    FilterQuery<PDFModel> q,
+  ) {
     return QueryBuilder.apply(this, (query) {
       return query.link(q, r'pdf');
     });
@@ -775,8 +794,9 @@ extension PageModelQuerySortThenBy
 
 extension PageModelQueryWhereDistinct
     on QueryBuilder<PageModel, PageModel, QDistinct> {
-  QueryBuilder<PageModel, PageModel, QDistinct> distinctByFullText(
-      {bool caseSensitive = true}) {
+  QueryBuilder<PageModel, PageModel, QDistinct> distinctByFullText({
+    bool caseSensitive = true,
+  }) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'full_text', caseSensitive: caseSensitive);
     });
@@ -815,7 +835,7 @@ extension PageModelQueryProperty
     });
   }
 
-  QueryBuilder<PageModel, double, QQueryOperations> heightProperty() {
+  QueryBuilder<PageModel, int, QQueryOperations> heightProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'height');
     });
@@ -827,7 +847,7 @@ extension PageModelQueryProperty
     });
   }
 
-  QueryBuilder<PageModel, double, QQueryOperations> widthProperty() {
+  QueryBuilder<PageModel, int, QQueryOperations> widthProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'width');
     });

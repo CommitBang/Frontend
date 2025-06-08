@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
+import '../../../shared/services/pdf_core/pdf_core.dart';
 
 /// PDF 문서를 화면에 렌더링하고
 /// - 수직 스크롤
@@ -13,12 +14,14 @@ class PdfPageViewer extends StatefulWidget {
   final PdfDocument document;
   final ValueChanged<double>? onScaleChanged;
   final ValueChanged<int>? onPageChanged;
+  final List<BasePage>? pages;
 
   const PdfPageViewer({
     super.key,
     required this.document,
     this.onScaleChanged,
     this.onPageChanged,
+    this.pages,
   });
 
   static PdfPageViewerState? of(BuildContext context) =>
@@ -45,14 +48,14 @@ class PdfPageViewerState extends State<PdfPageViewer> {
 
     // 페이지 컨트롤러: 페이지 변화 콜백 등록
     _pageController = PageController(initialPage: 1) // 초기 페이지 값 설정
-      ..addListener(() {
-        final page = (_pageController.page ?? 1).round(); // 페이지 목록의 첫번째 페이지 값 설정
-        widget.onPageChanged?.call(page);
-      });
+    ..addListener(() {
+      final page = (_pageController.page ?? 1).round(); // 페이지 목록의 첫번째 페이지 값 설정
+      widget.onPageChanged?.call(page);
+    });
 
     // TransformationController 생성 후 리스너 등록
-    _transformationController = TransformationController()
-      ..addListener(_onTransformChanged);
+    _transformationController =
+        TransformationController()..addListener(_onTransformChanged);
     _lastTranslate = vm.Vector3.zero();
   }
 
@@ -86,9 +89,10 @@ class PdfPageViewerState extends State<PdfPageViewer> {
     final newScale = (_currentScale + 0.5).clamp(_minScale, _maxScale);
     setState(() {
       _currentScale = newScale;
-      _transformationController.value = Matrix4.identity()
-        ..translate(_lastTranslate.x, _lastTranslate.y)
-        ..scale(_currentScale);
+      _transformationController.value =
+          Matrix4.identity()
+            ..translate(_lastTranslate.x, _lastTranslate.y)
+            ..scale(_currentScale);
       widget.onScaleChanged?.call(_currentScale);
     });
   }
@@ -98,9 +102,10 @@ class PdfPageViewerState extends State<PdfPageViewer> {
     final newScale = (_currentScale - 0.5).clamp(_minScale, _maxScale);
     setState(() {
       _currentScale = newScale;
-      _transformationController.value = Matrix4.identity()
-        ..translate(_lastTranslate.x, _lastTranslate.y)
-        ..scale(_currentScale);
+      _transformationController.value =
+          Matrix4.identity()
+            ..translate(_lastTranslate.x, _lastTranslate.y)
+            ..scale(_currentScale);
       widget.onScaleChanged?.call(_currentScale);
     });
   }
@@ -108,7 +113,7 @@ class PdfPageViewerState extends State<PdfPageViewer> {
   void _resetAlignment() {
     setState(() {
       _transformationController.value =
-      Matrix4.identity()..scale(_currentScale);
+          Matrix4.identity()..scale(_currentScale);
       widget.onScaleChanged?.call(_currentScale);
     });
   }
@@ -131,87 +136,40 @@ class PdfPageViewerState extends State<PdfPageViewer> {
   Widget build(BuildContext context) {
     final pageCount = widget.document.pages.length;
 
-    return Stack(
-      children: [
-        PageView.builder(
-          controller: _pageController,
-          scrollDirection: Axis.vertical,
-          itemCount: pageCount,
-          itemBuilder: (context, index) {
-            final page = widget.document.pages[index];
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                return InteractiveViewer(
-                  constrained: false,
-                  transformationController: _transformationController,
-                  panEnabled: true,
-                  scaleEnabled: true,
-                  minScale: _minScale,
-                  maxScale: _maxScale,
-                  child: SizedBox(
-                    width: constraints.maxWidth,
-                    height: constraints.maxHeight,
-                    child: FittedBox(
-                      fit: _fitWidth
-                          ? BoxFit.fitWidth
-                          : _fitHeight
-                          ? BoxFit.fitHeight
-                          : BoxFit.contain,
-                      alignment: Alignment.center,
-                      child: SizedBox(
-                        width: page.width,
-                        height: page.height,
-                        child: PdfPageView(
-                          document: widget.document,
-                          pageNumber: index,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
+    if (pageCount == 0) {
+      return const Center(child: Text('No pages found in document'));
+    }
+
+    return PageView.builder(
+      controller: _pageController,
+      scrollDirection: Axis.vertical,
+      itemCount: pageCount,
+      itemBuilder: (context, index) {
+        if (index >= widget.document.pages.length) {
+          return const Center(child: Text('Page index out of bounds'));
+        }
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return InteractiveViewer(
+              transformationController: _transformationController,
+              panEnabled: true,
+              scaleEnabled: true,
+              minScale: _minScale,
+              maxScale: _maxScale,
+              child: SizedBox(
+                width: constraints.maxWidth,
+                height: constraints.maxHeight,
+                child: PdfPageView(
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainer,
+                  document: widget.document,
+                  pageNumber: index + 1,
+                ),
+              ),
             );
           },
-        ),
-
-        Positioned(
-          top: 16,
-          right: 16,
-          child: Column(
-            children: [
-              FloatingActionButton(
-                onPressed: _zoomIn,
-                mini: true,
-                child: const Icon(Icons.zoom_in),
-              ),
-              const SizedBox(height: 8),
-              FloatingActionButton(
-                onPressed: _zoomOut,
-                mini: true,
-                child: const Icon(Icons.zoom_out),
-              ),
-              const SizedBox(height: 8),
-              FloatingActionButton(
-                onPressed: _resetAlignment,
-                mini: true,
-                child: const Icon(Icons.center_focus_strong),
-              ),
-              const SizedBox(height: 8),
-              FloatingActionButton(
-                onPressed: _toggleFitWidth,
-                mini: true,
-                child: const Icon(Icons.swap_horiz),
-              ),
-              const SizedBox(height: 8),
-              FloatingActionButton(
-                onPressed: _toggleFitHeight,
-                mini: true,
-                child: const Icon(Icons.swap_vert),
-              ),
-            ],
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }

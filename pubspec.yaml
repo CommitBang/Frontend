@@ -39,6 +39,14 @@ dependencies:
   shared_preferences: ^2.5.3
   path: ^1.9.1
 
+  pdfrx: ^1.1.28
+  path_provider: ^2.1.5
+  file_picker: ^10.1.9
+  provider: ^6.1.5
+  vector_math: ^2.1.4
+  shared_preferences: ^2.5.3
+  path: ^1.9.1
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
@@ -47,8 +55,14 @@ dependencies:
   intl: ^0.20.2
   logging: ^1.2.0
 
+  http: ^1.4.0
+  flutter_client_sse: ^2.0.3
+
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+
+  integration_test:
     sdk: flutter
 
   integration_test:
@@ -62,6 +76,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   isar_generator: ^3.1.0+1
   build_runner: ^2.4.13
+  mockito: ^5.4.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -82,6 +97,13 @@ flutter:
     - assets/sample_ocr_test.pdf
     - assets/ocr_result.json
 
+  assets:
+    - assets/icons/
+    - integration_test/assets/
+    - assets/sample.pdf
+    - assets/sample_ocr_test.pdf
+    - assets/ocr_result.json
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -94,6 +116,13 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
+  fonts:
+    - family: Pretendard Variable
+      fonts:
+        - asset: assets/fonts/Pretendard-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Pretendard-SemiBold.ttf
+          weight: 600
   fonts:
     - family: Pretendard Variable
       fonts:

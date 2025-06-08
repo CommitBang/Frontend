@@ -27,6 +27,18 @@ class LayoutModel extends BaseLayout {
   final double _width;
   final double _height;
 
+  // Figure 관련 필드들
+  @override
+  final String? figureId;
+  @override
+  final int? figureNumber;
+  @override
+  final String? caption;
+  @override
+  final String? referencedFigureId;
+  @override
+  final String? referenceText;
+
   // ====== 관계 ======
   IsarLink<PageModel> page = IsarLink<PageModel>();
 
@@ -36,6 +48,11 @@ class LayoutModel extends BaseLayout {
     required this.content,
     this.text,
     this.latex,
+    this.figureId,
+    this.figureNumber,
+    this.caption,
+    this.referencedFigureId,
+    this.referenceText,
     required double top,
     required double left,
     required double width,
@@ -50,6 +67,11 @@ class LayoutModel extends BaseLayout {
     required this.content,
     required this.text,
     required this.latex,
+    this.figureId,
+    this.figureNumber,
+    this.caption,
+    this.referencedFigureId,
+    this.referenceText,
     required Rect box,
   }) : _top = box.top,
        _left = box.left,

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
+import '../../../shared/services/pdf_core/pdf_core.dart';
 
 /// PDF 문서를 화면에 렌더링하고
 /// - 수직 스크롤
@@ -13,12 +14,14 @@ class PdfPageViewer extends StatefulWidget {
   final PdfDocument document;
   final ValueChanged<double>? onScaleChanged;
   final ValueChanged<int>? onPageChanged;
+  final List<BasePage>? pages;
 
   const PdfPageViewer({
     super.key,
     required this.document,
     this.onScaleChanged,
     this.onPageChanged,
+    this.pages,
   });
 
   static PdfPageViewerState? of(BuildContext context) =>
@@ -132,16 +135,22 @@ class PdfPageViewerState extends State<PdfPageViewer> {
   @override
   Widget build(BuildContext context) {
     final pageCount = widget.document.pages.length;
+
+    if (pageCount == 0) {
+      return const Center(child: Text('No pages found in document'));
+    }
+
     return PageView.builder(
       controller: _pageController,
       scrollDirection: Axis.vertical,
       itemCount: pageCount,
       itemBuilder: (context, index) {
-        final page = widget.document.pages[index];
+        if (index >= widget.document.pages.length) {
+          return const Center(child: Text('Page index out of bounds'));
+        }
         return LayoutBuilder(
           builder: (context, constraints) {
             return InteractiveViewer(
-              constrained: false,
               transformationController: _transformationController,
               panEnabled: true,
               scaleEnabled: true,
@@ -150,24 +159,11 @@ class PdfPageViewerState extends State<PdfPageViewer> {
               child: SizedBox(
                 width: constraints.maxWidth,
                 height: constraints.maxHeight,
-                child: FittedBox(
-                  fit:
-                      _fitWidth
-                          ? BoxFit.fitWidth
-                          : _fitHeight
-                          ? BoxFit.fitHeight
-                          : BoxFit.contain,
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    width: page.width,
-                    height: page.height,
-                    child: PdfPageView(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.surfaceContainer,
-                      document: widget.document,
-                      pageNumber: index + 1,
-                    ),
-                  ),
+                child: PdfPageView(
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainer,
+                  document: widget.document,
+                  pageNumber: index + 1,
                 ),
               ),
             );

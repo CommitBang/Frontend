@@ -63,14 +63,6 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
       _pdfs = await _getAllPdfs();
       _logger.info('PDFs are changed.');
       notifyListeners();
-      // OCR 처리 대기 목록 처리
-      final pendingPdfs = await _getPendingPdfs();
-      for (final pdf in pendingPdfs) {
-        if (!_processing.contains(pdf.id)) {
-          _processing.add(pdf.id);
-          _processPdfWithOcr(pdf);
-        }
-      }
     });
   }
 
@@ -88,6 +80,7 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   // 주어진 PDF에 대한 OCR을 진행합니다. 이때 독립된 isolate로 변경이 되고,
   // 처리 결과는 주 스레드에서 처리됩니다.
   Future<void> _processPdfWithOcr(PDFModel pdf) async {
+    _logger.severe('process OCR');
     await updatePDF(id: pdf.id, status: PDFStatus.processing);
     final receivePort = ReceivePort();
     await Isolate.spawn(_ocrProcess, [
@@ -127,7 +120,116 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
     OCRResult? ocrResult,
   ) async {
     if (ocrResult == null) throw Exception('OCR 결과 없음');
-    throw UnimplementedError();
+
+    try {
+      await _isar.writeTxn(() async {
+        // 2. 페이지별 데이터 저장
+        for (final pageDetail in ocrResult.pages) {
+          // 페이지 모델 생성
+          final pageModel = PageModel(
+            pageIndex: pageDetail.pageIndex,
+            fullText: pageDetail.fullText,
+            width: pageDetail.width,
+            height: pageDetail.height,
+          );
+
+          await _isar.pageModels.put(pageModel);
+
+          // 페이지와 PDF 연결
+          pageModel.pdf.value = pdf;
+          await pageModel.pdf.save();
+          pdf.pages.add(pageModel);
+
+          // 3. 레이아웃 데이터 저장
+          for (final layout in pageDetail.layouts) {
+            LayoutModel layoutModel;
+
+            if (layout is TextLayout) {
+              layoutModel = LayoutModel(
+                type: LayoutType.text,
+                content: layout.text,
+                text: layout.text,
+                latex: null,
+                figureId: null,
+                figureNumber: null,
+                caption: null,
+                referencedFigureId: null,
+                referenceText: null,
+                top: layout.boundingBox[1],
+                left: layout.boundingBox[0],
+                width: layout.boundingBox[2] - layout.boundingBox[0],
+                height: layout.boundingBox[3] - layout.boundingBox[1],
+              );
+            } else if (layout is FigureLayoutItem) {
+              layoutModel = LayoutModel(
+                type: LayoutType.figure,
+                content: layout.caption,
+                text: null,
+                latex: null,
+                figureId: layout.figureId,
+                figureNumber: layout.figureNumber,
+                caption: layout.caption,
+                referencedFigureId: null,
+                referenceText: null,
+                top: layout.boundingBox[1],
+                left: layout.boundingBox[0],
+                width: layout.boundingBox[2] - layout.boundingBox[0],
+                height: layout.boundingBox[3] - layout.boundingBox[1],
+              );
+            } else if (layout is FigureReferenceLayout) {
+              layoutModel = LayoutModel(
+                type: LayoutType.figureReference,
+                content: layout.referenceText,
+                text: layout.referenceText,
+                latex: null,
+                figureId: null,
+                figureNumber: layout.figureNumber,
+                caption: null,
+                referencedFigureId: layout.referencedFigureId,
+                referenceText: layout.referenceText,
+                top: layout.boundingBox[1],
+                left: layout.boundingBox[0],
+                width: layout.boundingBox[2] - layout.boundingBox[0],
+                height: layout.boundingBox[3] - layout.boundingBox[1],
+              );
+            } else {
+              continue; // 알 수 없는 레이아웃 타입은 건너뜀
+            }
+
+            await _isar.layoutModels.put(layoutModel);
+
+            // 레이아웃과 페이지 연결
+            layoutModel.page.value = pageModel;
+            await layoutModel.page.save();
+            pageModel.layouts.add(layoutModel);
+          }
+
+          await pageModel.layouts.save();
+        }
+
+        // 4. PDF와 페이지 관계 저장
+        await pdf.pages.save();
+        await _isar.pDFModels.put(pdf);
+      });
+
+      // 5. PDF 상태를 완료로 업데이트 (updatePDF 메서드 사용)
+      await updatePDF(
+        id: pdf.id,
+        status: PDFStatus.completed,
+        updatedAt: DateTime.now(),
+      );
+
+      _logger.info('PDF OCR 결과 저장 완료: ${pdf.name}');
+    } catch (e) {
+      _logger.severe('OCR 결과 저장 중 오류 발생: $e');
+      // 오류 발생 시 상태를 failed로 업데이트
+      await updatePDF(
+        id: pdf.id,
+        status: PDFStatus.failed,
+        updatedAt: DateTime.now(),
+      );
+      rethrow;
+    }
   }
 
   Future<_PDFInfo> _getPDFInfo(String filePath) async {
@@ -175,6 +277,7 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
         thumbnail: pdfInfo.thumbnail,
         totalPages: pdfInfo.totalPages,
       );
+      _processPdfWithOcr(pdf);
     } catch (e) {
       _logger.severe('Failed to add PDF: $e');
     }

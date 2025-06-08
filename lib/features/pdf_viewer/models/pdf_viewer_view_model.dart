@@ -1,16 +1,14 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:pdfrx/pdfrx.dart';
 
 import '../../../shared/services/pdf_core/pdf_core.dart';
 
 class PdfViewerViewModel extends ChangeNotifier {
   // Private state
-  PdfDocument? _document;
   BasePdf? _pdfModel;
   List<BasePage> _pages = [];
   List<BaseLayout> _layouts = [];
+  Map<int, List<BaseLayout>> _layoutsByPage = {};
 
   // UI state
   double _zoomPercent = 100.0;
@@ -28,8 +26,6 @@ class PdfViewerViewModel extends ChangeNotifier {
   PdfViewerViewModel({required PDFProvider pdfProvider})
     : _pdfProvider = pdfProvider;
 
-  // Getters
-  PdfDocument? get document => _document;
   BasePdf? get pdfModel => _pdfModel;
   List<BasePage> get pages => _pages;
   List<BaseLayout> get layouts => _layouts;
@@ -51,22 +47,82 @@ class PdfViewerViewModel extends ChangeNotifier {
 
   List<BaseLayout> get filteredLayouts =>
       _layouts
+          .where((l) => l.type == LayoutType.figure)
           .where(
-            (l) => l.content.toLowerCase().contains(_searchQuery.toLowerCase()),
+            (l) =>
+                l.figureId?.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ??
+                false,
           )
           .toList();
+
+  // Get layouts for a specific page
+  List<BaseLayout> getLayoutsForPage(int pageIndex) {
+    return _layoutsByPage[pageIndex] ?? [];
+  }
+
+  // Get figure references for a specific page
+  List<BaseLayout> getFigureReferencesForPage(int pageIndex) {
+    return getLayoutsForPage(
+      pageIndex,
+    ).where((layout) => layout.type == LayoutType.figureReference).toList();
+  }
+
+  // Get all figure references
+  List<BaseLayout> get figureReferences =>
+      _layouts
+          .where((layout) => layout.type == LayoutType.figureReference)
+          .toList();
+
+  // Get all figures
+  List<BaseLayout> get figures =>
+      _layouts.where((layout) => layout.type == LayoutType.figure).toList();
+
+  // Find figure by ID
+  BaseLayout? findFigureById(String figureId) {
+    try {
+      return figures.firstWhere((figure) => figure.figureId == figureId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Find figure by referenced figure ID
+  BaseLayout? findFigureByReference(BaseLayout reference) {
+    if (reference.type != LayoutType.figureReference) return null;
+    final referencedId = reference.referencedFigureId;
+    if (referencedId == null) return null;
+    return findFigureById(referencedId);
+  }
+
+  // Get page containing a specific layout
+  BasePage? getPageForLayout(BaseLayout layout) {
+    for (final entry in _layoutsByPage.entries) {
+      if (entry.value.contains(layout)) {
+        return _pages.firstWhere((page) => page.pageIndex == entry.key);
+      }
+    }
+    return null;
+  }
+
+  // Navigate to a specific figure by finding its page
+  int? getPageNumberForFigure(BaseLayout figure) {
+    if (figure.type != LayoutType.figure) return null;
+
+    final page = getPageForLayout(figure);
+    if (page != null) {
+      return page.pageIndex +
+          1; // Convert to 1-based page number for PDF controller
+    }
+    return null;
+  }
 
   // Methods
   Future<void> loadPdf({required String path, required bool isAsset}) async {
     try {
       _setLoading(true);
       _clearError();
-
-      // 1. Load document using pdfrx
-      final doc =
-          isAsset
-              ? await PdfDocument.openAsset(path)
-              : await PdfDocument.openFile(path);
 
       // 2. Get PDF from provider by path
       final model = await _pdfProvider.getPDF(path);
@@ -78,17 +134,19 @@ class PdfViewerViewModel extends ChangeNotifier {
       // 3. Load pages and layouts
       final pages = await model.getPages();
       final allLayouts = <BaseLayout>[];
+      final layoutsByPage = <int, List<BaseLayout>>{};
 
       for (final page in pages) {
         final layouts = await page.getLayouts();
         allLayouts.addAll(layouts);
+        layoutsByPage[page.pageIndex] = layouts;
       }
 
       // 4. Update state
-      _document = doc;
       _pdfModel = model;
       _pages = pages;
       _layouts = allLayouts;
+      _layoutsByPage = layoutsByPage;
       _currentPage = 1;
       _zoomPercent = 100.0;
       _pdfTitle = model.name;

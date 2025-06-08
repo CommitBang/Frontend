@@ -109,7 +109,7 @@ class _PageListView extends StatelessWidget {
       itemBuilder: (context, index) {
         final page = pages[index];
         return ListTile(
-          leading: _buildPageThumbnail(page),
+          leading: _buildPageThumbnail(page, context: context),
           title: Text('Page ${page.pageIndex}'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => onPageSelected(page),
@@ -118,15 +118,15 @@ class _PageListView extends StatelessWidget {
     );
   }
 
-  Widget _buildPageThumbnail(BasePage page) {
+  Widget _buildPageThumbnail(BasePage page, {required BuildContext context}) {
     // For now, use a placeholder. In a real implementation,
     // you would render the page thumbnail using pdfrx
     return Container(
-      width: 60,
-      height: 80,
+      width: 45,
+      height: 45,
       decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(4),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(15),
       ),
       child: const Icon(Icons.picture_as_pdf, color: Colors.grey),
     );
@@ -144,17 +144,15 @@ class _LayoutListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final figures =
+        layouts.where((layout) => layout.type == LayoutType.figure).toList();
     return ListView.builder(
-      itemCount: layouts.length,
+      itemCount: figures.length,
       itemBuilder: (context, index) {
-        final layout = layouts[index];
+        final layout = figures[index];
         return ListTile(
-          leading: _buildLayoutThumbnail(layout),
-          title: Text(
-            layout.content,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          leading: _buildLayoutThumbnail(layout, context: context),
+          title: Text(layout.figureId ?? 'Figure ${index + 1}'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => onLayoutSelected(layout),
         );
@@ -162,35 +160,34 @@ class _LayoutListView extends StatelessWidget {
     );
   }
 
-  Widget _buildLayoutThumbnail(BaseLayout layout) {
-    // For now, use a placeholder based on layout type
-    IconData icon;
-    switch (layout.type) {
-      case LayoutType.formula:
-        icon = Icons.functions;
-        break;
-      case LayoutType.text:
-        icon = Icons.text_fields;
-        break;
-      case LayoutType.header:
-        icon = Icons.title;
-        break;
-      case LayoutType.algorithm:
-        icon = Icons.code;
-        break;
-      case LayoutType.number:
-        icon = Icons.numbers;
-        break;
-    }
-
+  Widget _buildLayoutThumbnail(
+    BaseLayout layout, {
+    required BuildContext context,
+  }) {
     return Container(
-      width: 60,
-      height: 60,
+      width: 45,
+      height: 45,
       decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(4),
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(15),
       ),
-      child: Icon(icon, color: Colors.grey),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.image, color: Colors.grey[700]),
+          if (layout.type == LayoutType.figure && layout.figureNumber != null)
+            Text(
+              'Fig ${layout.figureNumber}',
+              style: const TextStyle(fontSize: 10, color: Colors.black54),
+            ),
+          if (layout.type == LayoutType.figureReference &&
+              layout.figureNumber != null)
+            Text(
+              'Ref ${layout.figureNumber}',
+              style: const TextStyle(fontSize: 10, color: Colors.black54),
+            ),
+        ],
+      ),
     );
   }
 }

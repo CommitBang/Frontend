@@ -75,10 +75,10 @@ class OCRProviderImpl extends OCRProvider {
 
     // 4) 결과 조회: GET /result/{taskId}
     final resultUri = Uri.parse('$baseUrl/result/$taskId');
-    final resultRes = await httpClient.get(
-      resultUri,
-      headers: {HttpHeaders.acceptHeader: 'application/json'},
-    );
+    final resultReq = http.Request('GET', resultUri);
+    resultReq.headers[HttpHeaders.acceptHeader] = 'application/json';
+    final streamedResult = await httpClient.send(resultReq);
+    final resultRes = await http.Response.fromStream(streamedResult);
     if (resultRes.statusCode != 200) {
       throw Exception('결과 조회 실패: HTTP ${resultRes.statusCode}');
     }

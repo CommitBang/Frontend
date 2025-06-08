@@ -12,7 +12,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final dir = await getApplicationCacheDirectory();
   final pdfProvider = await PDFProviderImpl.load(
-    ocrProvider: OCRProviderImpl(baseUrl: ''),
+    ocrProvider: OCRProviderImpl(
+      baseUrl: 'https://901b-39-115-116-188.ngrok-free.app',
+    ),
     dbPath: dir.path,
   );
   runApp(SnapfigApp(pdfProvider: pdfProvider));

@@ -80,7 +80,14 @@ class PDFModel extends BasePdf {
   int get currentPage => _currentPage;
 
   @override
-  Future<List<PageModel>> getPages() async => [];
+  Future<List<PageModel>> getPages() async {
+    // Isar의 백링크를 통해 페이지들을 로드
+    await pages.load();
+    // 페이지 인덱스 순으로 정렬하여 반환
+    final pageList = pages.toList();
+    pageList.sort((a, b) => a.pageIndex.compareTo(b.pageIndex));
+    return pageList;
+  }
 
   void update({
     String? name,

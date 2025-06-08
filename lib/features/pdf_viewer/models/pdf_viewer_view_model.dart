@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:pdfrx/pdfrx.dart';
 
 import '../../../shared/services/pdf_core/pdf_core.dart';
 
@@ -49,8 +47,13 @@ class PdfViewerViewModel extends ChangeNotifier {
 
   List<BaseLayout> get filteredLayouts =>
       _layouts
+          .where((l) => l.type == LayoutType.figure)
           .where(
-            (l) => l.content.toLowerCase().contains(_searchQuery.toLowerCase()),
+            (l) =>
+                l.figureId?.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ??
+                false,
           )
           .toList();
 
@@ -79,9 +82,7 @@ class PdfViewerViewModel extends ChangeNotifier {
   // Find figure by ID
   BaseLayout? findFigureById(String figureId) {
     try {
-      return figures.firstWhere(
-        (figure) => figure.figureId == figureId,
-      );
+      return figures.firstWhere((figure) => figure.figureId == figureId);
     } catch (e) {
       return null;
     }
@@ -99,10 +100,20 @@ class PdfViewerViewModel extends ChangeNotifier {
   BasePage? getPageForLayout(BaseLayout layout) {
     for (final entry in _layoutsByPage.entries) {
       if (entry.value.contains(layout)) {
-        return _pages.firstWhere(
-          (page) => page.pageIndex == entry.key,
-        );
+        return _pages.firstWhere((page) => page.pageIndex == entry.key);
       }
+    }
+    return null;
+  }
+
+  // Navigate to a specific figure by finding its page
+  int? getPageNumberForFigure(BaseLayout figure) {
+    if (figure.type != LayoutType.figure) return null;
+
+    final page = getPageForLayout(figure);
+    if (page != null) {
+      return page.pageIndex +
+          1; // Convert to 1-based page number for PDF controller
     }
     return null;
   }

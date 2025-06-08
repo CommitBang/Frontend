@@ -152,7 +152,7 @@ class _LayoutListView extends StatelessWidget {
         final layout = figures[index];
         return ListTile(
           leading: _buildLayoutThumbnail(layout, context: context),
-          title: Text('Figure ${layout.figureNumber}'),
+          title: Text(layout.figureId ?? 'Figure ${index + 1}'),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => onLayoutSelected(layout),
         );

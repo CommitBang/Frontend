@@ -65,15 +65,19 @@ class _PDFViewerState extends State<PDFViewer> {
   }
 
   void _onLayoutSelected(BaseLayout layout) {
-    // For layouts, we need to find which page contains this layout
-    // and jump to that page
-    if (_viewModel != null) {
-      for (final page in _viewModel!.pages) {
-        page.getLayouts().then((layouts) {
-          if (layouts.contains(layout)) {
-            _pdfController.goToPage(pageNumber: page.pageIndex + 1);
-          }
-        });
+    // Navigate to the page containing this figure
+    if (_viewModel != null && layout.type == LayoutType.figure) {
+      final pageNumber = _viewModel!.getPageNumberForFigure(layout);
+      if (pageNumber != null) {
+        _pdfController.goToPage(pageNumber: pageNumber);
+      } else {
+        // Show error message if figure page not found
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to navigate to figure'),
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
     }
   }
@@ -410,14 +414,71 @@ class _FigurePopupOverlayState extends State<_FigurePopupOverlay>
     super.dispose();
   }
 
+  Size _calculatePopupSize(Size screenSize, BaseLayout figure) {
+    // Get figure dimensions from the rect
+    final figureRect = figure.rect;
+    final figureWidth = figureRect.width;
+    final figureHeight = figureRect.height;
+    final aspectRatio = figureWidth / figureHeight;
+
+    // Define constraints
+    const minPopupWidth = 300.0;
+    const minPopupHeight = 200.0;
+    const headerHeight = 64.0; // Approximate header height
+    const padding = 32.0; // Total padding around content
+    const margin = 40.0; // Margin from screen edges
+
+    // Calculate maximum available space
+    final maxPopupWidth = screenSize.width - (margin * 2);
+    final maxPopupHeight = screenSize.height - (margin * 2);
+    final maxContentHeight = maxPopupHeight - headerHeight - padding;
+
+    // Calculate optimal size based on aspect ratio
+    double popupWidth;
+    double popupHeight;
+
+    if (aspectRatio > 1) {
+      // Landscape figure - prioritize width
+      popupWidth = (figureWidth * 0.8).clamp(minPopupWidth, maxPopupWidth);
+      final contentHeight = (popupWidth - padding) / aspectRatio;
+      popupHeight = (contentHeight + headerHeight + padding).clamp(
+        minPopupHeight,
+        maxPopupHeight,
+      );
+
+      // Adjust width if height constraint is hit
+      if (popupHeight == maxPopupHeight) {
+        final adjustedContentHeight = maxContentHeight;
+        popupWidth = (adjustedContentHeight * aspectRatio + padding).clamp(
+          minPopupWidth,
+          maxPopupWidth,
+        );
+      }
+    } else {
+      // Portrait or square figure - prioritize height
+      final contentHeight = (figureHeight * 0.8).clamp(
+        minPopupHeight - headerHeight - padding,
+        maxContentHeight,
+      );
+      popupHeight = contentHeight + headerHeight + padding;
+      popupWidth = ((contentHeight * aspectRatio) + padding).clamp(
+        minPopupWidth,
+        maxPopupWidth,
+      );
+    }
+
+    return Size(popupWidth, popupHeight);
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final theme = Theme.of(context);
 
-    // Calculate popup size and position
-    const popupWidth = 400.0;
-    const popupHeight = 500.0;
+    // Calculate popup size based on figure dimensions
+    final popupSize = _calculatePopupSize(screenSize, widget.figure);
+    final popupWidth = popupSize.width;
+    final popupHeight = popupSize.height;
     const pinHeight = 20.0;
     const margin = 20.0;
 
@@ -433,17 +494,42 @@ class _FigurePopupOverlayState extends State<_FigurePopupOverlay>
 
     // Ensure popup stays within screen bounds
     popupLeft = popupLeft.clamp(margin, screenSize.width - popupWidth - margin);
+
+    // For vertical positioning, ensure popup fits on screen
+    final totalPopupHeight = popupHeight + pinHeight;
     if (showAbove) {
-      popupTop = popupTop.clamp(
-        margin,
-        screenSize.height - popupHeight - margin,
-      );
+      // Check if there's enough space above
+      final minTopForAbove = margin;
+      final maxTopForAbove =
+          widget.targetPosition.dy - totalPopupHeight - margin;
+
+      if (maxTopForAbove < minTopForAbove) {
+        // Not enough space above, switch to below
+        popupTop = widget.targetPosition.dy + margin;
+      } else {
+        popupTop = maxTopForAbove;
+      }
     } else {
-      popupTop = popupTop.clamp(
-        margin,
-        screenSize.height - popupHeight - margin,
-      );
+      // Check if there's enough space below
+      final maxTopForBelow = screenSize.height - totalPopupHeight - margin;
+
+      if (widget.targetPosition.dy + margin > maxTopForBelow) {
+        // Not enough space below, switch to above or limit height
+        popupTop = widget.targetPosition.dy - totalPopupHeight - margin;
+        if (popupTop < margin) {
+          // Force to fit on screen by positioning at top margin
+          popupTop = margin;
+        }
+      } else {
+        popupTop = widget.targetPosition.dy + margin;
+      }
     }
+
+    // Final clamp to ensure popup stays within screen bounds
+    popupTop = popupTop.clamp(
+      margin,
+      screenSize.height - totalPopupHeight - margin,
+    );
 
     // Calculate pin position relative to popup
     final pinLeft =
@@ -478,7 +564,7 @@ class _FigurePopupOverlayState extends State<_FigurePopupOverlay>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (!showAbove) _buildPin(theme, pinLeft),
+                      if (!showAbove) _buildPin(theme, pinLeft, popupWidth),
                       Container(
                         width: popupWidth,
                         height: popupHeight,
@@ -555,7 +641,7 @@ class _FigurePopupOverlayState extends State<_FigurePopupOverlay>
                           ],
                         ),
                       ),
-                      if (showAbove) _buildPin(theme, pinLeft),
+                      if (showAbove) _buildPin(theme, pinLeft, popupWidth),
                     ],
                   ),
                 ),
@@ -567,9 +653,9 @@ class _FigurePopupOverlayState extends State<_FigurePopupOverlay>
     );
   }
 
-  Widget _buildPin(ThemeData theme, double pinLeft) {
+  Widget _buildPin(ThemeData theme, double pinLeft, double popupWidth) {
     return SizedBox(
-      width: 400, // Same as popup width
+      width: popupWidth,
       height: 20,
       child: CustomPaint(
         painter: _PinPainter(

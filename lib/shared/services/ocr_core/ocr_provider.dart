@@ -1,4 +1,4 @@
-import 'package:snapfig/shared/services/ocr_core/ocr_result.dart';
+import 'package:snapfig/shared/services/ocr_core/models/ocr_result.dart';
 
 abstract class OCRProvider {
   // OCR 처리 메서드

@@ -15,9 +15,7 @@ class NavigationViewModel extends ChangeNotifier {
   /// [path] The path to the PDF file
   /// [isAsset] Whether the PDF is an asset file (default: false)
   void navigateToPdfViewer({required String path, bool isAsset = false}) {
-    _navigationService.navigateToWidget(
-      PDFViewer(path: path, isAsset: isAsset),
-    );
+    _navigationService.navigateToWidget(PDFViewer(path: path));
   }
 
   /// Navigate back to the previous screen

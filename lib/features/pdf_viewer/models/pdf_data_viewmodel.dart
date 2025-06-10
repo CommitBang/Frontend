@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:collection/collection.dart';
+import 'dart:ui' as ui;
 
 class PDFDataViewModel extends ChangeNotifier {
   final PDFProvider _pdfProvider;
@@ -78,6 +79,13 @@ class PDFDataViewModel extends ChangeNotifier {
         ?.key;
   }
 
+  int? getPageNumberForReference(BaseLayout reference) {
+    if (reference.type != LayoutType.figureReference) return null;
+    return _layoutsByPage.entries
+        .firstWhereOrNull((entry) => entry.value.contains(reference))
+        ?.key;
+  }
+
   BaseLayout? findFigureByReference(BaseLayout reference) {
     if (reference.type != LayoutType.figureReference) return null;
     final referencedId = reference.referencedFigureId;
@@ -87,7 +95,7 @@ class PDFDataViewModel extends ChangeNotifier {
         .firstWhereOrNull((layout) => layout.figureId == referencedId);
   }
 
-  Future<PdfImage?> getFigureImage(BaseLayout figure) async {
+  Future<ui.Image?> getFigureImage(BaseLayout figure) async {
     if (figure.type != LayoutType.figure) return null;
     final pageIndex = getPageNumberForFigure(figure);
     if (pageIndex == null) return null;
@@ -110,6 +118,8 @@ class PDFDataViewModel extends ChangeNotifier {
       width: width.toInt(),
       height: height.toInt(),
     );
-    return image;
+    if (image == null) return null;
+    final imageData = await image.createImage();
+    return imageData;
   }
 }

@@ -20,7 +20,7 @@ class OCRProviderImpl extends OCRProvider {
   @override
   Future<OCRResult> process(String pdfPath) async {
     // 1) 분석 요청
-    final analyzeUri = Uri.parse('$baseUrl/process');
+    final analyzeUri = Uri.parse('$baseUrl/api/v1/process');
     final pdfBytes = await File(pdfPath).readAsBytes();
     final request = http.MultipartRequest('POST', analyzeUri)
       ..files.add(
@@ -32,7 +32,7 @@ class OCRProviderImpl extends OCRProvider {
       );
     final response = await httpClient.send(request);
     final analyzeRes = await http.Response.fromStream(response);
-    if (analyzeRes.statusCode != 202) {
+    if (analyzeRes.statusCode != 200) {
       throw Exception('OCR API 요청 실패: HTTP ${analyzeRes.statusCode}');
     }
     final bodyJson = json.decode(analyzeRes.body) as Map<String, dynamic>;

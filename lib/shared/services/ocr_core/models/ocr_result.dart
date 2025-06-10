@@ -25,7 +25,7 @@ class PageData {
 
   factory PageData.fromJson(Map<String, dynamic> json) {
     return PageData(
-      pageNum: json['page_num'] as int,
+      pageNum: (json['page_num'] as num).toInt(),
       blocks:
           (json['blocks'] as List<dynamic>)
               .map((block) => TextBlock.fromJson(block as Map<String, dynamic>))

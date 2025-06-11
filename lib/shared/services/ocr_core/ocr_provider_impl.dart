@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:snapfig/shared/services/ocr_core/ocr_provider.dart';
 import 'package:snapfig/shared/services/ocr_core/models/ocr_result.dart';
 
@@ -15,7 +16,13 @@ class OCRProviderImpl extends OCRProvider {
   final http.Client httpClient;
 
   OCRProviderImpl({required this.baseUrl, http.Client? httpClient})
-    : httpClient = httpClient ?? http.Client();
+    : httpClient = httpClient ?? _createHttpClient();
+
+  static http.Client _createHttpClient() {
+    final httpClient = HttpClient();
+    httpClient.badCertificateCallback = (cert, host, port) => true;
+    return IOClient(httpClient);
+  }
 
   @override
   Future<OCRResult> process(String pdfPath) async {

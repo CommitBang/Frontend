@@ -24,15 +24,19 @@ class FigureLink extends InteractiveElement {
   }
 
   factory FigureLink.fromJson(Map<String, dynamic> json) {
-    return FigureLink(
-      pageNum: json['page_num'] as int,
-      referenceBbox: BoundingBox.fromJson(
-        json['reference_bbox'] as Map<String, dynamic>,
-      ),
-      targetXref: json['target_xref'] as int,
-      pdfFilename: json['pdf_filename'] as String,
-      elementType: json['element_type'] as String? ?? 'figure',
-    );
+    try {
+      return FigureLink(
+        pageNum: json['page_num'] as int,
+        referenceBbox: BoundingBox.fromJson(
+          json['reference_bbox'] as Map<String, dynamic>,
+        ),
+        targetXref: json['target_xref'] as int,
+        pdfFilename: json['pdf_filename'] as String,
+        elementType: json['element_type'] as String? ?? 'figure',
+      );
+    } catch (e) {
+      throw AssertionError('FigureLink.fromJson error: $e, $json');
+    }
   }
 
   @override

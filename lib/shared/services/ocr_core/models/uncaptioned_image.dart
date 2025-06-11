@@ -24,15 +24,19 @@ class UncaptionedImage extends InteractiveElement {
   }
 
   factory UncaptionedImage.fromJson(Map<String, dynamic> json) {
-    return UncaptionedImage(
-      pageNum: json['page_num'] as int,
-      referenceBbox: BoundingBox.fromJson(
-        json['reference_bbox'] as Map<String, dynamic>,
-      ),
-      xref: json['xref'] as int,
-      pdfFilename: json['pdf_filename'] as String,
-      elementType: json['element_type'] as String? ?? 'uncaptioned_image',
-    );
+    try {
+      return UncaptionedImage(
+        pageNum: json['page_num'] as int,
+        referenceBbox: BoundingBox.fromJson(
+          json['reference_bbox'] as Map<String, dynamic>,
+        ),
+        xref: json['xref'] as int,
+        pdfFilename: json['pdf_filename'] as String,
+        elementType: json['element_type'] as String? ?? 'uncaptioned_image',
+      );
+    } catch (e) {
+      throw AssertionError('UncaptionedImage.fromJson error: $e, $json');
+    }
   }
 
   @override

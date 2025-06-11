@@ -1,34 +1,63 @@
+import 'package:flutter/widgets.dart';
 import 'package:snapfig/shared/services/ocr_core/models/annotation_link.dart';
+import 'package:snapfig/shared/services/ocr_core/models/bounding_box.dart';
 import 'package:snapfig/shared/services/ocr_core/models/figure_link.dart';
 import 'package:snapfig/shared/services/ocr_core/models/interactive_element.dart';
 import 'package:snapfig/shared/services/ocr_core/models/uncaptioned_image.dart';
 
 class TextBlock {
   final String text;
+  final Rect bbox;
 
-  const TextBlock({required this.text});
+  const TextBlock({required this.text, required this.bbox});
 
   factory TextBlock.fromJson(Map<String, dynamic> json) {
-    return TextBlock(text: json['text'] as String);
+    final bbox = json['bbox'] as List;
+    return TextBlock(
+      text: json['text'] as String,
+      bbox: Rect.fromLTWH(
+        bbox[0].toDouble(),
+        bbox[1].toDouble(),
+        bbox[2].toDouble(),
+        bbox[3].toDouble(),
+      ),
+    );
   }
 
   Map<String, dynamic> toJson() {
-    return {'text': text};
+    return {
+      'text': text,
+      'bbox': [bbox.left, bbox.top, bbox.right, bbox.bottom],
+    };
   }
 }
 
 class PageData {
   final int pageNum;
   final List<TextBlock> blocks;
+  final Size size;
 
-  const PageData({required this.pageNum, required this.blocks});
+  const PageData({
+    required this.pageNum,
+    required this.blocks,
+    required this.size,
+  });
 
   factory PageData.fromJson(Map<String, dynamic> json) {
+    final size = json['page_size'] as List;
     return PageData(
-      pageNum: (json['page_num'] as num).toInt(),
+      pageNum: (json['page_number'] as num).toInt(),
+      size: Size(size[0].toDouble(), size[1].toDouble()),
       blocks:
           (json['blocks'] as List<dynamic>)
-              .map((block) => TextBlock.fromJson(block as Map<String, dynamic>))
+              .map((block) {
+                final blockMap = block as Map<String, dynamic>;
+                if (blockMap['type'] == 'text') {
+                  return TextBlock.fromJson(blockMap);
+                }
+                return null;
+              })
+              .whereType<TextBlock>()
               .toList(),
     );
   }
@@ -74,7 +103,6 @@ class OCRResult {
     final elements =
         elementsJson.map((element) {
           final elementMap = element as Map<String, dynamic>;
-
           // Determine the type based on element_type field or presence of specific fields
           if (elementMap.containsKey('element_type')) {
             switch (elementMap['element_type']) {
@@ -82,18 +110,10 @@ class OCRResult {
                 return FigureLink.fromJson(elementMap);
               case 'uncaptioned_image':
                 return UncaptionedImage.fromJson(elementMap);
+              case 'annotation_link':
+                return AnnotationLink.fromJson(elementMap);
             }
           }
-
-          // Check for type-specific fields
-          if (elementMap.containsKey('target_text')) {
-            return AnnotationLink.fromJson(elementMap);
-          } else if (elementMap.containsKey('target_xref')) {
-            return FigureLink.fromJson(elementMap);
-          } else if (elementMap.containsKey('xref')) {
-            return UncaptionedImage.fromJson(elementMap);
-          }
-
           throw Exception('Unknown interactive element type: $elementMap');
         }).toList();
 

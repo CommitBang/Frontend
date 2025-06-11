@@ -21,15 +21,19 @@ class AnnotationLink extends InteractiveElement {
   }
 
   factory AnnotationLink.fromJson(Map<String, dynamic> json) {
-    return AnnotationLink(
-      pageNum: json['page_num'] as int,
-      referenceBbox: BoundingBox.fromJson(
-        json['reference_bbox'] as Map<String, dynamic>,
-      ),
-      targetText: json['target_text'] as String,
-      someOptionalField:
-          json['some_optional_field'] as String? ?? 'default_value',
-    );
+    try {
+      return AnnotationLink(
+        pageNum: json['page_num'] as int,
+        referenceBbox: BoundingBox.fromJson(
+          json['reference_bbox'] as Map<String, dynamic>,
+        ),
+        targetText: json['target_text'] as String,
+        someOptionalField:
+            json['some_optional_field'] as String? ?? 'default_value',
+      );
+    } catch (e) {
+      throw AssertionError('AnnotationLink.fromJson error: $e, $json');
+    }
   }
 
   @override

@@ -1,18 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
-import 'package:snapfig/features/pdf_viewer/models/pdf_viewer_viewmodel.dart';
+import 'package:snapfig/features/pdf_viewer/models/pdf_data_viewmodel.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/sidebar/pdf_sidebar.dart';
+import 'package:snapfig/features/pdf_viewer/widgets/figure_overlay_widget.dart';
+import 'package:snapfig/features/pdf_viewer/widgets/popover_wrapper.dart';
 
 import '../../../shared/services/pdf_core/pdf_core.dart';
-import '../widgets/no_pdf_loaded_view.dart';
 import '../widgets/pdf_bottom_bar.dart';
-
-// 매직 넘버 상수 선언
-const double kStatusBarHeight = 48;
-const double kIconSize = 64;
-const double kFontSize = 18;
-const double kSpacingLarge = 16;
-const double kSpacingSmall = 8;
 
 class PDFViewer extends StatefulWidget {
   final String path;
@@ -38,9 +32,13 @@ class _PDFViewerState extends State<PDFViewer> {
       setState(() {
         _viewModel = PDFDataViewModel(pdfProvider: pdfProvider);
       });
-
-      // Load initial PDF
-      _viewModel!.loadPDF(widget.path);
+      _pdfController.addListener(() {
+        if (_pdfController.isReady) {
+          _pdfController.useDocument((doc) {
+            _viewModel?.loadPDFData(widget.path, doc);
+          });
+        }
+      });
     });
   }
 
@@ -50,20 +48,71 @@ class _PDFViewerState extends State<PDFViewer> {
   }
 
   void _onFigureSelected(BaseLayout layout) {
-    // Navigate to the page containing this figure
-    if (_viewModel != null && layout.type == LayoutType.figure) {
-      final pageNumber = _viewModel!.getPageNumberForFigure(layout);
-      if (pageNumber != null) {
-        _pdfController.goToPage(pageNumber: pageNumber);
-      } else {
-        // Show error message if figure page not found
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to navigate to figure'),
-            duration: Duration(seconds: 2),
+    // Show figure overlay popup when reference is tapped
+    if (layout.type != LayoutType.figure) return;
+    final pageNumber = _viewModel!.getPageNumberForFigure(layout);
+    if (pageNumber == null) return;
+    _pdfController.goToPage(pageNumber: pageNumber);
+  }
+
+  void _showFigurePopover(BaseLayout reference) {
+    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    // Get the position where the tap occurred
+    final overlay = Overlay.of(context);
+    final pageNumber = _viewModel!.getPageNumberForReference(reference);
+    if (pageNumber == null) return;
+
+    // Calculate position based on the reference location
+    final page = _viewModel!.pages[pageNumber];
+    final pageRect = Rect.fromLTWH(
+      0,
+      0,
+      page.width.toDouble(),
+      page.height.toDouble(),
+    ); // TODO: FIXXXX
+    if (pageRect == null) return;
+
+    final scaleX = pageRect.width / page.width.toDouble();
+    final scaleY = pageRect.height / page.height.toDouble();
+
+    final referenceCenter = Offset(
+      pageRect.left + (reference.rect.center.dx * scaleX),
+      pageRect.top + (reference.rect.center.dy * scaleY),
+    );
+
+    final overlayEntry = OverlayEntry(
+      builder:
+          (context) => PopoverWrapper(
+            targetPosition: referenceCenter,
+            onDismiss: () {},
+            child: FigureOverlayWidget(
+              reference: reference,
+              viewModel: _viewModel!,
+              onClose: () {},
+              navigateToFigure: (figure) {
+                _navigateToFigure(figure);
+              },
+            ),
           ),
-        );
-      }
+    );
+
+    overlay.insert(overlayEntry);
+  }
+
+  void _navigateToFigure(BaseLayout figure) {
+    final pageNumber = _viewModel!.getPageNumberForFigure(figure);
+    if (pageNumber != null) {
+      _pdfController.goToPage(pageNumber: pageNumber);
+    } else {
+      // Show error message if figure page not found
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to navigate to figure'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -89,17 +138,6 @@ class _PDFViewerState extends State<PDFViewer> {
     return ListenableBuilder(
       listenable: _viewModel!,
       builder: (context, child) {
-        // 1. 로딩 상태
-        if (_viewModel!.isLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        // 2. PDF 미로딩 상태
-        if (_viewModel!.isFailed) {
-          return const Scaffold(body: NoPdfLoadedView());
-        }
-        // 3. 정상 상태
         return Scaffold(
           appBar: AppBar(title: Text(_viewModel!.pdfTitle), actions: []),
           body: Row(
@@ -116,6 +154,7 @@ class _PDFViewerState extends State<PDFViewer> {
                           backgroundColor:
                               Theme.of(context).colorScheme.surfaceContainer,
                           pageOverlaysBuilder: (context, pageRect, page) {
+                            print('pageOverlaysBuilder: ${page.pageNumber}');
                             return _buildReferenceHighlights(
                               context,
                               pageRect,
@@ -125,14 +164,15 @@ class _PDFViewerState extends State<PDFViewer> {
                         ),
                       ),
                     ),
-                    // Bottom Status Bar
-                    PDFBottomBar(
-                      zoomPercent: (_pdfController.currentZoom * 100).toInt(),
-                      currentPage: _pdfController.pageNumber ?? 1,
-                      totalPages: _viewModel!.pages.length,
-                      sidebarVisible: _sidebarVisible,
-                      onSidebarToggle: _onSidebarToggle,
-                    ),
+                    if (_pdfController.isReady)
+                      // Bottom Status Bar
+                      PDFBottomBar(
+                        zoomPercent: (_pdfController.currentZoom * 100).toInt(),
+                        currentPage: _pdfController.pageNumber ?? 1,
+                        totalPages: _viewModel!.pages.length,
+                        sidebarVisible: _sidebarVisible,
+                        onSidebarToggle: _onSidebarToggle,
+                      ),
                   ],
                 ),
               ),
@@ -153,11 +193,7 @@ class _PDFViewerState extends State<PDFViewer> {
                 },
                 child:
                     _sidebarVisible
-                        ? PDFSideBar(
-                          viewModel: _viewModel!,
-                          onPageSelected: _onOutlineSelected,
-                          onFigureSelected: _onFigureSelected,
-                        )
+                        ? _buildSideBar(context)
                         : const SizedBox.shrink(key: ValueKey('empty')),
               ),
             ],
@@ -167,20 +203,67 @@ class _PDFViewerState extends State<PDFViewer> {
     );
   }
 
+  Widget _buildSideBar(BuildContext context) {
+    final theme = Theme.of(context);
+    if (_viewModel?.isDataLoaded ?? false) {
+      return PDFSideBar(
+        viewModel: _viewModel!,
+        onPageSelected: _onOutlineSelected,
+        onFigureSelected: _onFigureSelected,
+      );
+    } else if (_viewModel?.isLoading ?? false) {
+      return Container(
+        width: 300,
+        color: theme.colorScheme.surfaceContainer,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text('Loading PDF...', style: theme.textTheme.bodyMedium),
+            ],
+          ),
+        ),
+      );
+    } else {
+      return Container(
+        color: theme.colorScheme.surfaceContainer,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'PDF data not loaded',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
   // Reference highlight
   List<Widget> _buildReferenceHighlights(
     BuildContext context,
     Rect pageRect,
     int pageNumber,
   ) {
-    final layouts = _viewModel!.layoutsByPage[pageNumber];
-    final page = _viewModel!.pages[pageNumber];
+    if (_viewModel == null || _viewModel!.isLoading) return [];
+    final pageIndex = pageNumber - 1;
+    final layouts = _viewModel!.layoutsByPage[pageIndex];
+    final page = _viewModel!.pages[pageIndex];
     if (layouts == null) return [];
     final references = layouts.where(
-      (layout) => layout.type == LayoutType.figureReference,
+      (layout) => layout.type == LayoutType.figure,
     );
     final scaleX = pageRect.width / page.width.toDouble();
     final scaleY = pageRect.height / page.height.toDouble();
+    print('Reference highlights: ${references.length}');
+
     return references.map((reference) {
       final rect = reference.rect;
 
@@ -190,6 +273,28 @@ class _PDFViewerState extends State<PDFViewer> {
       final top = (rect.top * scaleY);
       final width = rect.width * scaleX;
       final height = rect.height * scaleY;
+
+      // 디버깅용 출력 - 좌표와 크기 확인
+      print('Figure highlight - page: $pageNumber');
+      print('  Original rect: ${rect.toString()}');
+      print('  Scaled: left=$left, top=$top, width=$width, height=$height');
+      print('  PageRect: ${pageRect.toString()}');
+      print('  Page size: ${page.width}x${page.height}');
+      print('  Scale factors: X=$scaleX, Y=$scaleY');
+
+      // width, height가 유효한지 확인
+      if (width <= 0 || height <= 0) {
+        print('  ❌ Invalid dimensions: width=$width, height=$height');
+        return const SizedBox.shrink();
+      }
+
+      // 페이지 범위를 벗어나는지 확인
+      if (left < 0 ||
+          top < 0 ||
+          left + width > pageRect.width ||
+          top + height > pageRect.height) {
+        print('  ⚠️ Highlight outside page bounds');
+      }
 
       return Positioned(
         left: left,
@@ -205,8 +310,26 @@ class _PDFViewerState extends State<PDFViewer> {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.secondaryContainer.withValues(
-                    alpha: 0.2,
+                  // 더 명확하게 보이도록 배경색과 경계선 추가
+                  color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                  border: Border.all(
+                    color: theme.colorScheme.primary,
+                    width: 2.0,
+                  ),
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    child: Icon(
+                      Icons.image,
+                      size: 12,
+                      color: theme.colorScheme.onPrimary,
+                    ),
                   ),
                 ),
               ),

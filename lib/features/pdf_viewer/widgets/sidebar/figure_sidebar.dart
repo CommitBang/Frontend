@@ -18,7 +18,7 @@ class FigureSidebar extends StatelessWidget {
       itemBuilder: (context, index) {
         return ListTile(
           leading: _buildThumbnail(figures[index], context: context),
-          title: Text(figures[index].toString()),
+          title: Text(figures[index].figureId ?? ''),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => onFigureSelected(figures[index]),
         );

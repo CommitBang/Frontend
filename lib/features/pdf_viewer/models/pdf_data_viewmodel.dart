@@ -12,11 +12,13 @@ class PDFDataViewModel extends ChangeNotifier {
   Map<int, List<BaseLayout>> _layoutsByPage = {};
   // Pdf data
   PdfDocument? _pdfDocument;
+  bool _isDataLoaded = false;
   bool _isLoading = true;
   bool _isError = false;
   String? _errorMessage;
   List<PdfOutlineNode> _outlines = [];
 
+  bool get isDataLoaded => _isDataLoaded;
   bool get isLoading => _isLoading;
   bool get isFailed => _isError;
   String? get errorMessage => _errorMessage;
@@ -35,14 +37,14 @@ class PDFDataViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
-    _pdfDocument?.dispose();
     super.dispose();
   }
 
-  void loadPDF(String path) async {
+  void loadPDFData(String path, PdfDocument pdfDocument) async {
+    if (_isDataLoaded) return;
+    _pdfDocument = pdfDocument;
     _isLoading = true;
     notifyListeners();
-
     try {
       // Load pdf model from database
       final pdfModel = await _pdfProvider.getPDF(path);
@@ -54,8 +56,7 @@ class PDFDataViewModel extends ChangeNotifier {
       }
       _pages = await pdfModel.getPages();
       _pdfModel = pdfModel;
-      _pdfDocument = await PdfDocument.openFile(path);
-      _outlines = await _pdfDocument?.loadOutline() ?? [];
+      _outlines = await _pdfDocument!.loadOutline();
       _layoutsByPage = await Future.wait(
         _pages.map((page) async {
           final layouts = await page.getLayouts();
@@ -69,6 +70,7 @@ class PDFDataViewModel extends ChangeNotifier {
       _errorMessage = e.toString();
     }
     _isLoading = false;
+    _isDataLoaded = true;
     notifyListeners();
   }
 
@@ -96,7 +98,7 @@ class PDFDataViewModel extends ChangeNotifier {
   }
 
   Future<ui.Image?> getFigureImage(BaseLayout figure) async {
-    if (figure.type != LayoutType.figure) return null;
+    if (figure.type != LayoutType.figure || _pdfDocument == null) return null;
     final pageIndex = getPageNumberForFigure(figure);
     if (pageIndex == null) return null;
     final pageDoc = _pdfDocument!.pages.firstWhereOrNull(

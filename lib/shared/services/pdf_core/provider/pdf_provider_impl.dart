@@ -125,23 +125,42 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
       final pages = ocrResult.paragraphData.pages;
       final interactiveElements = ocrResult.interactiveElements;
 
-      // Mapping OCRResult to PageModel and LayoutModel
-      final pageModels = <PageModel>[];
-      for (final page in pages) {
-        final interactiveElementsInPage = interactiveElements.where(
-          (elem) => elem.pageNum == page.pageNum,
-        );
-        final pageModel = PageModel.create(
-          pageIndex: page.pageNum,
-          fullText: page.blocks.map((block) => block.text).join('\n'),
-          size: Size(0, 0), // Size information not available in OCRResult
-        );
+      // Save to Isar database
+      await _isar.writeTxn(() async {
+        // Mapping OCRResult to PageModel and LayoutModel
+        final pageModels = <PageModel>[];
+        final allLayoutModels = <LayoutModel>[];
 
-        final layoutModels = <LayoutModel>[];
-        for (final interactiveElem in interactiveElementsInPage) {
-          if (interactiveElem is FigureLink) {
-            layoutModels.add(
-              LayoutModel.create(
+        for (final page in pages) {
+          final interactiveElementsInPage = interactiveElements.where(
+            (elem) => elem.pageNum == page.pageNum,
+          );
+
+          final pageModel = PageModel.create(
+            pageIndex: page.pageNum,
+            fullText: page.blocks.map((block) => block.text).join('\n'),
+            size: page.size,
+          );
+
+          // PDF와 PageModel 관계 설정
+          pageModel.pdf.value = pdf;
+
+          final layoutModels = <LayoutModel>[];
+          for (final textBlock in page.blocks) {
+            final layoutModel = LayoutModel.create(
+              type: LayoutType.text,
+              content: textBlock.text,
+              text: textBlock.text,
+              latex: '',
+              box: textBlock.bbox,
+            );
+            layoutModels.add(layoutModel);
+          }
+
+          for (final interactiveElem in interactiveElementsInPage) {
+            LayoutModel? layoutModel;
+            if (interactiveElem is FigureLink) {
+              layoutModel = LayoutModel.create(
                 type: LayoutType.figureReference,
                 content: '',
                 text: '',
@@ -153,11 +172,9 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
                   interactiveElem.referenceBbox.y1,
                 ),
                 referencedFigureId: interactiveElem.targetXref.toString(),
-              ),
-            );
-          } else if (interactiveElem is AnnotationLink) {
-            layoutModels.add(
-              LayoutModel.create(
+              );
+            } else if (interactiveElem is AnnotationLink) {
+              layoutModel = LayoutModel.create(
                 type: LayoutType.figure,
                 content: interactiveElem.targetText,
                 text: '',
@@ -168,11 +185,9 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
                   interactiveElem.referenceBbox.x1,
                   interactiveElem.referenceBbox.y1,
                 ),
-              ),
-            );
-          } else if (interactiveElem is UncaptionedImage) {
-            layoutModels.add(
-              LayoutModel.create(
+              );
+            } else if (interactiveElem is UncaptionedImage) {
+              layoutModel = LayoutModel.create(
                 type: LayoutType.figure,
                 content: '',
                 text: '',
@@ -184,25 +199,40 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
                   interactiveElem.referenceBbox.y1,
                 ),
                 figureId: interactiveElem.xref.toString(),
-              ),
-            );
-          }
-        }
-        pageModel.layouts.addAll(layoutModels);
-        pageModels.add(pageModel);
-      }
+              );
+            }
 
-      // Save to Isar database
-      await _isar.writeTxn(() async {
-        // Save page models
+            if (layoutModel != null) {
+              layoutModels.add(layoutModel);
+            }
+          }
+
+          // PageModel과 LayoutModel 관계 설정
+          for (final layoutModel in layoutModels) {
+            layoutModel.page.value = pageModel;
+          }
+
+          allLayoutModels.addAll(layoutModels);
+          pageModels.add(pageModel);
+        }
+
+        // 1. 먼저 PageModel들을 저장
         await _isar.pageModels.putAll(pageModels);
 
-        // Update PDF model with pages
-        pdf.pages.clear();
-        pdf.pages.addAll(pageModels);
-        // Save updated PDF model
+        // 2. LayoutModel들을 저장
+        await _isar.layoutModels.putAll(allLayoutModels);
+
+        // 3. PDF 모델 저장 및 관계 설정
         await _isar.pDFModels.put(pdf);
-        await pdf.pages.save();
+
+        // 4. 관계 링크들을 저장
+        for (final pageModel in pageModels) {
+          await pageModel.pdf.save();
+        }
+
+        for (final layoutModel in allLayoutModels) {
+          await layoutModel.page.save();
+        }
       });
 
       await updatePDF(

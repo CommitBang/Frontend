@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
-import 'package:snapfig/features/pdf_viewer/models/pdf_viewer_viewmodel.dart';
+import 'package:snapfig/features/pdf_viewer/models/pdf_data_viewmodel.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/sidebar/figure_sidebar.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/sidebar/outline_sidebar.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
@@ -55,14 +55,18 @@ class _PDFSideBarState extends State<PDFSideBar> {
             },
           ),
           if (_selectedTab == _PDFSideBarTab.page)
-            OutlineSidebar(
-              outlines: widget.viewModel.outlines,
-              onOutlineSelected: widget.onPageSelected,
+            Expanded(
+              child: OutlineSidebar(
+                outlines: widget.viewModel.outlines,
+                onOutlineSelected: widget.onPageSelected,
+              ),
             ),
           if (_selectedTab == _PDFSideBarTab.figure)
-            FigureSidebar(
-              figures: widget.viewModel.figures,
-              onFigureSelected: widget.onFigureSelected,
+            Expanded(
+              child: FigureSidebar(
+                figures: widget.viewModel.figures,
+                onFigureSelected: widget.onFigureSelected,
+              ),
             ),
         ],
       ),

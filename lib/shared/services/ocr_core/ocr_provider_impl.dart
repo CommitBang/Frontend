@@ -27,7 +27,7 @@ class OCRProviderImpl extends OCRProvider {
   @override
   Future<OCRResult> process(String pdfPath) async {
     // 1) 분석 요청
-    final analyzeUri = Uri.parse('$baseUrl/api/v1/process');
+    final analyzeUri = Uri.parse('$baseUrl/api/v1/analyze');
     final pdfBytes = await File(pdfPath).readAsBytes();
     final request = http.MultipartRequest('POST', analyzeUri)
       ..files.add(

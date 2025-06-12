@@ -122,8 +122,8 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
     if (ocrResult == null) throw Exception('OCR 결과 없음');
 
     try {
-      final pages = ocrResult.paragraphData.pages;
-      final interactiveElements = ocrResult.interactiveElements;
+      final pages = ocrResult.pages;
+      final figures = ocrResult.figures;
 
       // Save to Isar database
       await _isar.writeTxn(() async {
@@ -132,79 +132,71 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
         final allLayoutModels = <LayoutModel>[];
 
         for (final page in pages) {
-          final interactiveElementsInPage = interactiveElements.where(
-            (elem) => elem.pageNum == page.pageNum,
-          );
-
           final pageModel = PageModel.create(
-            pageIndex: page.pageNum,
+            pageIndex: page.index,
             fullText: page.blocks.map((block) => block.text).join('\n'),
-            size: page.size,
+            size: Size(page.pageSize[0], page.pageSize[1]),
           );
 
           // PDF와 PageModel 관계 설정
           pageModel.pdf.value = pdf;
 
           final layoutModels = <LayoutModel>[];
+          // 텍스트 블록 처리
           for (final textBlock in page.blocks) {
-            final layoutModel = LayoutModel.create(
-              type: LayoutType.text,
-              content: textBlock.text,
-              text: textBlock.text,
-              latex: '',
-              box: textBlock.bbox,
+            layoutModels.add(
+              LayoutModel.create(
+                type: LayoutType.text,
+                content: textBlock.text,
+                text: textBlock.text,
+                latex: '',
+                box: Rect.fromLTWH(
+                  textBlock.bbox.x,
+                  textBlock.bbox.y,
+                  textBlock.bbox.width,
+                  textBlock.bbox.height,
+                ),
+              ),
             );
-            layoutModels.add(layoutModel);
           }
 
-          for (final interactiveElem in interactiveElementsInPage) {
-            LayoutModel? layoutModel;
-            if (interactiveElem is FigureLink) {
-              layoutModel = LayoutModel.create(
+          // Reference 처리
+          for (final ref in page.references) {
+            if (ref.notMatched) continue;
+            layoutModels.add(
+              LayoutModel.create(
                 type: LayoutType.figureReference,
-                content: '',
-                text: '',
+                content: ref.text,
+                text: ref.text,
                 latex: '',
-                box: Rect.fromLTRB(
-                  interactiveElem.referenceBbox.x0,
-                  interactiveElem.referenceBbox.y0,
-                  interactiveElem.referenceBbox.x1,
-                  interactiveElem.referenceBbox.y1,
+                box: Rect.fromLTWH(
+                  ref.bbox.x,
+                  ref.bbox.y,
+                  ref.bbox.width,
+                  ref.bbox.height,
                 ),
-                referencedFigureId: interactiveElem.targetXref.toString(),
-              );
-            } else if (interactiveElem is AnnotationLink) {
-              layoutModel = LayoutModel.create(
-                type: LayoutType.figure,
-                content: interactiveElem.targetText,
-                text: '',
-                latex: '',
-                box: Rect.fromLTRB(
-                  interactiveElem.referenceBbox.x0,
-                  interactiveElem.referenceBbox.y0,
-                  interactiveElem.referenceBbox.x1,
-                  interactiveElem.referenceBbox.y1,
-                ),
-              );
-            } else if (interactiveElem is UncaptionedImage) {
-              layoutModel = LayoutModel.create(
-                type: LayoutType.figure,
-                content: '',
-                text: '',
-                latex: '',
-                box: Rect.fromLTRB(
-                  interactiveElem.referenceBbox.x0,
-                  interactiveElem.referenceBbox.y0,
-                  interactiveElem.referenceBbox.x1,
-                  interactiveElem.referenceBbox.y1,
-                ),
-                figureId: interactiveElem.xref.toString(),
-              );
-            }
+                referencedFigureId: ref.figureId,
+              ),
+            );
+          }
 
-            if (layoutModel != null) {
-              layoutModels.add(layoutModel);
-            }
+          // Figure 처리 (해당 page에 속한 figure만)
+          for (final figure in figures.where((f) => f.pageIdx == page.index)) {
+            layoutModels.add(
+              LayoutModel.create(
+                type: LayoutType.figure,
+                content: figure.text,
+                text: figure.text,
+                latex: '',
+                box: Rect.fromLTWH(
+                  figure.bbox.x,
+                  figure.bbox.y,
+                  figure.bbox.width,
+                  figure.bbox.height,
+                ),
+                figureId: figure.figureId,
+              ),
+            );
           }
 
           // PageModel과 LayoutModel 관계 설정

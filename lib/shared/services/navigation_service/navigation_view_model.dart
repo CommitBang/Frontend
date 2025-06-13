@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snapfig/features/pdf_viewer/screens/pdf_viewer.dart';
+import 'package:snapfig/features/pdf_viewer/screens/pdf_viewer.dart';
 import 'package:snapfig/shared/services/navigation_service/navigation_service.dart';
 
 /// ViewModel for handling navigation in the MVVM pattern.

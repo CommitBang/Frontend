@@ -2,8 +2,6 @@
 
 // lib/main.dart
 
-// lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path_provider/path_provider.dart';
@@ -34,16 +32,6 @@ class SnapfigApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InheritedPDFProviderWidget(
-      provider: _pdfProvider,
-      child: MaterialApp(
-        title: 'Snapfig',
-        theme: lightTheme,
-        darkTheme: darkTheme,
-        navigatorKey: _navigationService.navigatorKey,
-        home: const HomeWidget(),
-        routes: {'/ai-settings': (context) => const AISettingsScreen()},
-      ),
     return InheritedPDFProviderWidget(
       provider: _pdfProvider,
       child: MaterialApp(

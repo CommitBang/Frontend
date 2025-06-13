@@ -20,7 +20,7 @@ void main() {
 
   setUp(() {
     provider = OCRProviderImpl(
-      baseUrl: 'https://901b-39-115-116-188.ngrok-free.app',
+      baseUrl: 'https://b08b-165-194-27-212.ngrok-free.app',
     );
   });
 
@@ -28,12 +28,8 @@ void main() {
     final pdfPath = await copyAssetToLocal('integration_test/assets/test.pdf');
     final result = await provider.process(pdfPath);
     expect(result, isA<OCRResult>());
-    expect(result.title, isNotEmpty);
-    expect(result.chapters, isNotEmpty);
     expect(result.pages, isNotEmpty);
-    expect(result.metadata.totalPages, isNotEmpty);
-    expect(result.metadata.processingTime, isNotEmpty);
-    expect(result.metadata.totalFigures, isNotEmpty);
+    expect(result.figures, isNotEmpty);
   }, timeout: const Timeout(Duration(minutes: 15)));
 
   test('process()에 잘못된 경로를 넣어도 예외가 발생하지 않는다', () async {

@@ -36,6 +36,8 @@ class _HomeWidgetState extends State<HomeWidget> {
   }
 
   Widget _buildNavigationRail(BuildContext context) {
+    final theme = Theme.of(context);
+
     return NavigationRail(
       useIndicator: true,
       labelType: NavigationRailLabelType.all,
@@ -48,6 +50,31 @@ class _HomeWidgetState extends State<HomeWidget> {
         setState(() => _selectedIndex = index);
       },
       minWidth: 80,
+      trailing: Expanded(
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: () {
+                    Navigator.of(context).pushNamed('/ai-settings');
+                  },
+                  icon: Icon(Icons.smart_toy, color: theme.colorScheme.primary),
+                  tooltip: 'AI 설정',
+                  style: IconButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    foregroundColor: theme.colorScheme.onPrimaryContainer,
+                    padding: const EdgeInsets.all(12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:snapfig/features/pdf_viewer/screens/pdf_viewer.dart';
+import 'package:snapfig/features/pdf_viewer/screens/pdf_viewer.dart';
 import 'package:snapfig/shared/services/navigation_service/navigation_service.dart';
 
 /// ViewModel for handling navigation in the MVVM pattern.
@@ -15,9 +16,7 @@ class NavigationViewModel extends ChangeNotifier {
   /// [path] The path to the PDF file
   /// [isAsset] Whether the PDF is an asset file (default: false)
   void navigateToPdfViewer({required String path, bool isAsset = false}) {
-    _navigationService.navigateToWidget(
-      PDFViewer(path: path, isAsset: isAsset),
-    );
+    _navigationService.navigateToWidget(PDFViewer(path: path));
   }
 
   /// Navigate back to the previous screen

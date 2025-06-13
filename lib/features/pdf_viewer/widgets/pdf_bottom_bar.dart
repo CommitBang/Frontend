@@ -28,7 +28,7 @@ class PDFBottomBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '[39m$zoomPercent%',
+              '$zoomPercent%',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             Text(

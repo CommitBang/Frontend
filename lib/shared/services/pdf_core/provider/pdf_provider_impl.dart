@@ -81,6 +81,7 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   // 처리 결과는 주 스레드에서 처리됩니다.
   Future<void> _processPdfWithOcr(PDFModel pdf) async {
     _logger.severe('process OCR');
+    _logger.severe('process OCR');
     await updatePDF(id: pdf.id, status: PDFStatus.processing);
     final receivePort = ReceivePort();
     await Isolate.spawn(_ocrProcess, [
@@ -122,97 +123,111 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
     if (ocrResult == null) throw Exception('OCR 결과 없음');
 
     try {
+      final pages = ocrResult.pages;
+      final figures = ocrResult.figures;
+
+      // Save to Isar database
       await _isar.writeTxn(() async {
-        // 2. 페이지별 데이터 저장
-        for (final pageDetail in ocrResult.pages) {
-          // 페이지 모델 생성
-          final pageModel = PageModel(
-            pageIndex: pageDetail.pageIndex,
-            fullText: pageDetail.fullText,
-            width: pageDetail.width,
-            height: pageDetail.height,
+        // Mapping OCRResult to PageModel and LayoutModel
+        final pageModels = <PageModel>[];
+        final allLayoutModels = <LayoutModel>[];
+
+        for (final page in pages) {
+          final pageModel = PageModel.create(
+            pageIndex: page.index,
+            fullText: page.blocks.map((block) => block.text).join('\n'),
+            size: Size(page.pageSize[0], page.pageSize[1]),
           );
 
-          await _isar.pageModels.put(pageModel);
-
-          // 페이지와 PDF 연결
+          // PDF와 PageModel 관계 설정
           pageModel.pdf.value = pdf;
-          await pageModel.pdf.save();
-          pdf.pages.add(pageModel);
 
-          // 3. 레이아웃 데이터 저장
-          for (final layout in pageDetail.layouts) {
-            LayoutModel layoutModel;
-
-            if (layout is TextLayout) {
-              layoutModel = LayoutModel(
+          final layoutModels = <LayoutModel>[];
+          // 텍스트 블록 처리
+          for (final textBlock in page.blocks) {
+            layoutModels.add(
+              LayoutModel.create(
                 type: LayoutType.text,
-                content: layout.text,
-                text: layout.text,
-                latex: null,
-                figureId: null,
-                figureNumber: null,
-                caption: null,
-                referencedFigureId: null,
-                referenceText: null,
-                top: layout.boundingBox[1],
-                left: layout.boundingBox[0],
-                width: layout.boundingBox[2] - layout.boundingBox[0],
-                height: layout.boundingBox[3] - layout.boundingBox[1],
-              );
-            } else if (layout is FigureLayoutItem) {
-              layoutModel = LayoutModel(
-                type: LayoutType.figure,
-                content: layout.caption,
-                text: null,
-                latex: null,
-                figureId: layout.figureId,
-                figureNumber: layout.figureNumber,
-                caption: layout.caption,
-                referencedFigureId: null,
-                referenceText: null,
-                top: layout.boundingBox[1],
-                left: layout.boundingBox[0],
-                width: layout.boundingBox[2] - layout.boundingBox[0],
-                height: layout.boundingBox[3] - layout.boundingBox[1],
-              );
-            } else if (layout is FigureReferenceLayout) {
-              layoutModel = LayoutModel(
-                type: LayoutType.figureReference,
-                content: layout.referenceText,
-                text: layout.referenceText,
-                latex: null,
-                figureId: null,
-                figureNumber: layout.figureNumber,
-                caption: null,
-                referencedFigureId: layout.referencedFigureId,
-                referenceText: layout.referenceText,
-                top: layout.boundingBox[1],
-                left: layout.boundingBox[0],
-                width: layout.boundingBox[2] - layout.boundingBox[0],
-                height: layout.boundingBox[3] - layout.boundingBox[1],
-              );
-            } else {
-              continue; // 알 수 없는 레이아웃 타입은 건너뜀
-            }
-
-            await _isar.layoutModels.put(layoutModel);
-
-            // 레이아웃과 페이지 연결
-            layoutModel.page.value = pageModel;
-            await layoutModel.page.save();
-            pageModel.layouts.add(layoutModel);
+                content: textBlock.text,
+                text: textBlock.text,
+                latex: '',
+                box: Rect.fromLTWH(
+                  textBlock.bbox.x,
+                  textBlock.bbox.y,
+                  textBlock.bbox.width,
+                  textBlock.bbox.height,
+                ),
+              ),
+            );
           }
 
-          await pageModel.layouts.save();
+          // Reference 처리
+          for (final ref in page.references) {
+            if (ref.notMatched) continue;
+            layoutModels.add(
+              LayoutModel.create(
+                type: LayoutType.figureReference,
+                content: ref.text,
+                text: ref.text,
+                latex: '',
+                box: Rect.fromLTWH(
+                  ref.bbox.x,
+                  ref.bbox.y,
+                  ref.bbox.width,
+                  ref.bbox.height,
+                ),
+                referencedFigureId: ref.figureId,
+              ),
+            );
+          }
+
+          // Figure 처리 (해당 page에 속한 figure만)
+          for (final figure in figures.where((f) => f.pageIdx == page.index)) {
+            layoutModels.add(
+              LayoutModel.create(
+                type: LayoutType.figure,
+                content: figure.text,
+                text: figure.text,
+                latex: '',
+                box: Rect.fromLTWH(
+                  figure.bbox.x,
+                  figure.bbox.y,
+                  figure.bbox.width,
+                  figure.bbox.height,
+                ),
+                figureId: figure.figureId,
+              ),
+            );
+          }
+
+          // PageModel과 LayoutModel 관계 설정
+          for (final layoutModel in layoutModels) {
+            layoutModel.page.value = pageModel;
+          }
+
+          allLayoutModels.addAll(layoutModels);
+          pageModels.add(pageModel);
         }
 
-        // 4. PDF와 페이지 관계 저장
-        await pdf.pages.save();
+        // 1. 먼저 PageModel들을 저장
+        await _isar.pageModels.putAll(pageModels);
+
+        // 2. LayoutModel들을 저장
+        await _isar.layoutModels.putAll(allLayoutModels);
+
+        // 3. PDF 모델 저장 및 관계 설정
         await _isar.pDFModels.put(pdf);
+
+        // 4. 관계 링크들을 저장
+        for (final pageModel in pageModels) {
+          await pageModel.pdf.save();
+        }
+
+        for (final layoutModel in allLayoutModels) {
+          await layoutModel.page.save();
+        }
       });
 
-      // 5. PDF 상태를 완료로 업데이트 (updatePDF 메서드 사용)
       await updatePDF(
         id: pdf.id,
         status: PDFStatus.completed,
@@ -273,11 +288,13 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
       });
       final pdfInfo = await _getPDFInfo(filePath);
       pdf.thumbnail = pdfInfo.thumbnail;
+      pdf.thumbnail = pdfInfo.thumbnail;
       await updatePDF(
         id: pdf.id,
         thumbnail: pdfInfo.thumbnail,
         totalPages: pdfInfo.totalPages,
       );
+      _processPdfWithOcr(pdf);
       _processPdfWithOcr(pdf);
     } catch (e) {
       _logger.severe('Failed to add PDF: $e');
@@ -334,6 +351,11 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
         .sortByUpdatedAt()
         .optional(limit != null, (q) => q.limit(limit!));
     return await query.findAll();
+  }
+
+  @override
+  Future<BasePdf?> getPDF(String path) async {
+    return await _isar.pDFModels.filter().pathEqualTo(path).findFirst();
   }
 
   @override

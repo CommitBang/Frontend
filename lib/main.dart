@@ -40,9 +40,7 @@ class SnapfigApp extends StatelessWidget {
         darkTheme: darkTheme,
         navigatorKey: _navigationService.navigatorKey,
         home: const HomeWidget(),
-        routes: {
-          '/ai-settings': (context) => const AISettingsScreen(),
-        },
+        routes: {'/ai-settings': (context) => const AISettingsScreen()},
       ),
     );
   }

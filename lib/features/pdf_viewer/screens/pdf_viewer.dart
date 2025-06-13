@@ -4,7 +4,7 @@ import 'package:snapfig/features/pdf_viewer/models/pdf_data_viewmodel.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/sidebar/pdf_sidebar.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/figure_overlay_widget.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/popover_wrapper.dart';
-import 'package:snapfig/features/pdf_viewer/widgets/ai_chat_popup.dart';
+import 'package:snapfig/features/pdf_viewer/widgets/simple_draggable_ai_chat.dart';
 import 'package:snapfig/shared/services/ai_service/ai_service.dart';
 
 import '../../../shared/services/pdf_core/pdf_core.dart';
@@ -98,32 +98,24 @@ class _PDFViewerState extends State<PDFViewer> {
     _dismissCurrentPopover();
 
     final overlay = Overlay.of(context);
+    final screenSize = MediaQuery.of(context).size;
+
+    // Calculate initial position (center of screen)
+    const chatWidth = 320.0;
+    const chatHeight = 400.0;
+    final initialPosition = Offset(
+      (screenSize.width - chatWidth) / 2, // Center horizontally
+      (screenSize.height - chatHeight) / 2, // Center vertically
+    );
 
     final overlayEntry = OverlayEntry(
-      builder: (context) => Material(
-        color: Colors.transparent,
-        child: Stack(
-          children: [
-            // Background overlay
-            GestureDetector(
-              onTap: _dismissCurrentPopover,
-              child: Container(
-                width: double.infinity,
-                height: double.infinity,
-                color: Colors.black.withValues(alpha: 0.5),
-              ),
-            ),
-            // Centered AI chat popup
-            Center(
-              child: AIChatPopup(
-                figure: figure,
-                viewModel: _viewModel!,
-                onClose: _dismissCurrentPopover,
-              ),
-            ),
-          ],
-        ),
-      ),
+      builder:
+          (context) => SimpleDraggableAIChat(
+            figure: figure,
+            viewModel: _viewModel!,
+            onClose: _dismissCurrentPopover,
+            initialPosition: initialPosition,
+          ),
     );
 
     _currentPopover = overlayEntry;
@@ -174,7 +166,18 @@ class _PDFViewerState extends State<PDFViewer> {
       listenable: _viewModel!,
       builder: (context, child) {
         return Scaffold(
-          appBar: AppBar(title: Text(_viewModel!.pdfTitle), actions: []),
+          appBar: AppBar(
+            title: Text(_viewModel!.pdfTitle),
+            actions: [
+              IconButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/ai-settings');
+                },
+                icon: const Icon(Icons.smart_toy),
+                tooltip: 'AI 설정',
+              ),
+            ],
+          ),
           body: Row(
             children: [
               Expanded(
@@ -211,6 +214,13 @@ class _PDFViewerState extends State<PDFViewer> {
                   ],
                 ),
               ),
+              // Divider between main content and sidebar
+              if (_sidebarVisible)
+                VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
               // Sidebar
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
@@ -293,7 +303,7 @@ class _PDFViewerState extends State<PDFViewer> {
     final page = _viewModel!.pages[pageIndex];
     if (layouts == null) return [];
     final references = layouts.where(
-      (layout) => layout.type == LayoutType.figureReference,
+      (layout) => layout.type == LayoutType.figure,
     );
 
     // 페이지 크기 비율 계산 - OCR 좌표를 뷰어 좌표로 변환

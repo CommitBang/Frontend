@@ -98,30 +98,91 @@ class PDFDataViewModel extends ChangeNotifier {
   }
 
   Future<ui.Image?> getFigureImage(BaseLayout figure) async {
-    if (figure.type != LayoutType.figure || _pdfDocument == null) return null;
-    final pageIndex = getPageNumberForFigure(figure);
-    if (pageIndex == null) return null;
-    final pageDoc = _pdfDocument!.pages.firstWhereOrNull(
-      (p) => p.pageNumber == pageIndex,
-    );
-    if (pageDoc == null) return null;
+    if (figure.type != LayoutType.figure || _pdfDocument == null) {
+      print(
+        '❌ Invalid input: figure type=${figure.type}, pdfDocument=${_pdfDocument != null}',
+      );
+      return null;
+    }
 
+    final pageIndex = getPageNumberForFigure(figure);
+    if (pageIndex == null) {
+      print('❌ Could not find page for figure: ${figure.figureId}');
+      return null;
+    }
+
+    // Validate page index bounds
+    if (pageIndex < 0 || pageIndex >= _pages.length) {
+      print(
+        '❌ Page index out of bounds: $pageIndex (total pages: ${_pages.length})',
+      );
+      return null;
+    }
+
+    // Convert 0-based index to 1-based page number for PDF document lookup
+    final pageNumber = pageIndex + 1;
+    final pageDoc = _pdfDocument!.pages.firstWhereOrNull(
+      (p) => p.pageNumber == pageNumber,
+    );
+    if (pageDoc == null) {
+      print('❌ Could not find PDF page: $pageNumber');
+      return null;
+    }
+
+    print('✅ Processing figure on page $pageNumber (index: $pageIndex)');
+    print('   PDF page size: ${pageDoc.width}x${pageDoc.height}');
+    print(
+      '   OCR page size: ${_pages[pageIndex].width}x${_pages[pageIndex].height}',
+    );
+
+    // Calculate scale factors
     final scaleX = pageDoc.width / _pages[pageIndex].width;
     final scaleY = pageDoc.height / _pages[pageIndex].height;
+
+    print('   Scale factors: scaleX=$scaleX, scaleY=$scaleY');
+
     final figureRect = figure.rect;
     final left = figureRect.left * scaleX;
     final top = figureRect.top * scaleY;
     final width = figureRect.width * scaleX;
     final height = figureRect.height * scaleY;
 
+    print('   Original rect: ${figureRect.toString()}');
+    print('   Scaled rect: left=$left, top=$top, width=$width, height=$height');
+
+    // Validate dimensions
+    if (width <= 0 || height <= 0) {
+      print('❌ Invalid dimensions after scaling');
+      return null;
+    }
+
+    // Clamp coordinates to page bounds to prevent rendering errors
+    final clampedLeft = left.clamp(0.0, pageDoc.width - 1);
+    final clampedTop = top.clamp(0.0, pageDoc.height - 1);
+    final clampedWidth = (width).clamp(1.0, pageDoc.width - clampedLeft);
+    final clampedHeight = (height).clamp(1.0, pageDoc.height - clampedTop);
+
+    if (clampedLeft != left ||
+        clampedTop != top ||
+        clampedWidth != width ||
+        clampedHeight != height) {
+      print(
+        '⚠️  Clamped coordinates: left=$clampedLeft, top=$clampedTop, width=$clampedWidth, height=$clampedHeight',
+      );
+    }
+
     final image = await pageDoc.render(
-      x: left.toInt(),
-      y: top.toInt(),
-      width: width.toInt(),
-      height: height.toInt(),
+      x: clampedLeft.toInt(),
+      y: clampedTop.toInt(),
+      width: clampedWidth.toInt(),
+      height: clampedHeight.toInt(),
     );
-    if (image == null) return null;
+    if (image == null) {
+      print('❌ Failed to render image');
+      return null;
+    }
     final imageData = await image.createImage();
+    print('✅ Successfully rendered figure image');
     return imageData;
   }
 }

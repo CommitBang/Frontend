@@ -21,6 +21,7 @@ class _PDFViewerState extends State<PDFViewer> {
   PDFDataViewModel? _viewModel;
   final PdfViewerController _pdfController = PdfViewerController();
   bool _sidebarVisible = true;
+  OverlayEntry? _currentPopover;
 
   @override
   void initState() {
@@ -55,56 +56,42 @@ class _PDFViewerState extends State<PDFViewer> {
     _pdfController.goToPage(pageNumber: pageNumber);
   }
 
-  void _showFigurePopover(BaseLayout reference) {
-    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
+  void _showFigurePopover(BaseLayout reference, Offset tapPosition) {
+    // Dismiss any existing popover
+    _dismissCurrentPopover();
 
-    // Get the position where the tap occurred
     final overlay = Overlay.of(context);
-    final pageNumber = _viewModel!.getPageNumberForReference(reference);
-    if (pageNumber == null) return;
-
-    // Calculate position based on the reference location
-    final page = _viewModel!.pages[pageNumber];
-    final pageRect = Rect.fromLTWH(
-      0,
-      0,
-      page.width.toDouble(),
-      page.height.toDouble(),
-    ); // TODO: FIXXXX
-    if (pageRect == null) return;
-
-    final scaleX = pageRect.width / page.width.toDouble();
-    final scaleY = pageRect.height / page.height.toDouble();
-
-    final referenceCenter = Offset(
-      pageRect.left + (reference.rect.center.dx * scaleX),
-      pageRect.top + (reference.rect.center.dy * scaleY),
-    );
 
     final overlayEntry = OverlayEntry(
       builder:
           (context) => PopoverWrapper(
-            targetPosition: referenceCenter,
-            onDismiss: () {},
+            targetPosition: tapPosition,
+            onDismiss: _dismissCurrentPopover,
             child: FigureOverlayWidget(
               reference: reference,
               viewModel: _viewModel!,
-              onClose: () {},
+              onClose: _dismissCurrentPopover,
               navigateToFigure: (figure) {
+                _dismissCurrentPopover();
                 _navigateToFigure(figure);
               },
             ),
           ),
     );
 
+    _currentPopover = overlayEntry;
     overlay.insert(overlayEntry);
+  }
+
+  void _dismissCurrentPopover() {
+    _currentPopover?.remove();
+    _currentPopover = null;
   }
 
   void _navigateToFigure(BaseLayout figure) {
     final pageNumber = _viewModel!.getPageNumberForFigure(figure);
     if (pageNumber != null) {
-      _pdfController.goToPage(pageNumber: pageNumber);
+      _pdfController.goToPage(pageNumber: pageNumber + 1);
     } else {
       // Show error message if figure page not found
       ScaffoldMessenger.of(context).showSnackBar(
@@ -124,6 +111,7 @@ class _PDFViewerState extends State<PDFViewer> {
 
   @override
   void dispose() {
+    _dismissCurrentPopover();
     _viewModel?.dispose();
     super.dispose();
   }
@@ -319,9 +307,17 @@ class _PDFViewerState extends State<PDFViewer> {
       builder: (innerContext) {
         final theme = Theme.of(innerContext);
         return GestureDetector(
-          onTap: () {
+          onTapDown: (details) {
             print('Tapped reference: ${reference.content}');
-            _onFigureSelected(reference);
+            // Get the global position of the tap
+            final RenderBox? renderBox =
+                innerContext.findRenderObject() as RenderBox?;
+            if (renderBox != null) {
+              final globalPosition = renderBox.localToGlobal(
+                details.localPosition,
+              );
+              _showFigurePopover(reference, globalPosition);
+            }
           },
           child: Container(
             decoration: BoxDecoration(

@@ -258,42 +258,49 @@ class _PDFViewerState extends State<PDFViewer> {
     final page = _viewModel!.pages[pageIndex];
     if (layouts == null) return [];
     final references = layouts.where(
-      (layout) => layout.type == LayoutType.figure,
+      (layout) => layout.type == LayoutType.text,
     );
+
+    // 페이지 크기 비율 계산 - OCR 좌표를 뷰어 좌표로 변환
     final scaleX = pageRect.width / page.width.toDouble();
     final scaleY = pageRect.height / page.height.toDouble();
-    print('Reference highlights: ${references.length}');
+
+    print('=== Page $pageNumber Highlights Debug ===');
+    print('References found: ${references.length}');
+    print('OCR page size: ${page.width}x${page.height}');
+    print('PageRect: ${pageRect.toString()}');
+    print('PageRect size: ${pageRect.width}x${pageRect.height}');
+    print('PageRect offset: ${pageRect.left}, ${pageRect.top}');
+    print('Scale factors: scaleX=$scaleX, scaleY=$scaleY');
 
     return references.map((reference) {
       final rect = reference.rect;
 
-      // Direct coordinate transformation without Y-axis flip
-      // The OCR coordinates appear to use top-left origin like Flutter
-      final left = (rect.left * scaleX);
-      final top = (rect.top * scaleY);
+      // Transform OCR coordinates to page coordinates
+      final left = rect.left * scaleX;
+      final top = rect.top * scaleY;
       final width = rect.width * scaleX;
       final height = rect.height * scaleY;
 
-      // 디버깅용 출력 - 좌표와 크기 확인
-      print('Figure highlight - page: $pageNumber');
-      print('  Original rect: ${rect.toString()}');
+      // Debug output
+      print('  Figure: ${reference.content}');
+      print('  OCR rect: ${rect.toString()}');
       print('  Scaled: left=$left, top=$top, width=$width, height=$height');
       print('  PageRect: ${pageRect.toString()}');
-      print('  Page size: ${page.width}x${page.height}');
-      print('  Scale factors: X=$scaleX, Y=$scaleY');
 
-      // width, height가 유효한지 확인
+      // Basic validation
       if (width <= 0 || height <= 0) {
-        print('  ❌ Invalid dimensions: width=$width, height=$height');
+        print('  ❌ Invalid dimensions, skipping');
         return const SizedBox.shrink();
       }
 
-      // 페이지 범위를 벗어나는지 확인
-      if (left < 0 ||
-          top < 0 ||
-          left + width > pageRect.width ||
-          top + height > pageRect.height) {
-        print('  ⚠️ Highlight outside page bounds');
+      // Skip if completely outside page bounds
+      if (left + width < 0 ||
+          left > pageRect.width ||
+          top + height < 0 ||
+          top > pageRect.height) {
+        print('  ❌ Completely outside page bounds, skipping');
+        return const SizedBox.shrink();
       }
 
       return Positioned(
@@ -301,42 +308,44 @@ class _PDFViewerState extends State<PDFViewer> {
         top: top,
         width: width,
         height: height,
-        child: Builder(
-          builder: (innerContext) {
-            final theme = Theme.of(innerContext);
-            return GestureDetector(
-              onTap: () {
-                _onFigureSelected(reference);
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  // 더 명확하게 보이도록 배경색과 경계선 추가
-                  color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                  border: Border.all(
-                    color: theme.colorScheme.primary,
-                    width: 2.0,
-                  ),
-                  borderRadius: BorderRadius.circular(4.0),
-                ),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: Icon(
-                      Icons.image,
-                      size: 12,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
+        child: _buildHighlightWidget(context, reference),
       );
     }).toList();
+  }
+
+  // 하이라이트 위젯을 별도 메서드로 분리
+  Widget _buildHighlightWidget(BuildContext context, BaseLayout reference) {
+    return Builder(
+      builder: (innerContext) {
+        final theme = Theme.of(innerContext);
+        return GestureDetector(
+          onTap: () {
+            print('Tapped reference: ${reference.content}');
+            _onFigureSelected(reference);
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.2),
+              border: Border.all(color: theme.colorScheme.primary, width: 2.0),
+              borderRadius: BorderRadius.circular(4.0),
+            ),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+                child: Icon(
+                  Icons.image,
+                  size: 12,
+                  color: theme.colorScheme.onPrimary,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

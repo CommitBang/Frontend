@@ -111,8 +111,8 @@ class Reference {
     return Reference(
       bbox: BBox.fromJson(json['bbox'] as Map<String, dynamic>),
       text: json['text'] as String,
-      figureId: json['figure_id'] as String,
-      notMatched: json['not_matched'] as bool,
+      figureId: json['figure_id'] as String? ?? '',
+      notMatched: json['not_matched'] as bool? ?? false,
     );
   }
 
@@ -145,7 +145,7 @@ class Figure {
     return Figure(
       bbox: BBox.fromJson(json['bbox'] as Map<String, dynamic>),
       pageIdx: (json['page_idx'] as num).toInt(),
-      figureId: json['figure_id'] as String,
+      figureId: json['figure_id'] as String? ?? '',
       type: json['type'] as String,
       text: json['text'] as String,
     );

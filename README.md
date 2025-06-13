@@ -3,8 +3,6 @@
 [![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![iOS](https://img.shields.io/badge/iOS-000000?style=for-the-badge&logo=ios&logoColor=white)](https://developer.apple.com/ios/)
 [![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
-[![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen?style=for-the-badge)](https://github.com/CommitBang/Frontend/actions)
-[![Coverage](https://img.shields.io/badge/Coverage-85%25-brightgreen?style=for-the-badge)](https://github.com/CommitBang/Frontend/actions)
 
 ## 📖 프로젝트 소개
 
@@ -143,10 +141,95 @@ OCR 기능을 사용하려면 백엔드 OCR 서버가 필요합니다:
 
 ---
 
-## 프로젝트 구조
+## ✨ 주요 기능
 
+### 🔍 OCR 기반 텍스트 추출
+- **Figure 및 참조 인식**: 문서 내 Figure와 관련 참조를 자동으로 연결
+
+### 🤖 AI 기반 Figure 분석
+- **다중 AI 프로바이더 지원**: OpenAI GPT-4, Google Gemini 연동
+- **인터랙티브 Figure 분석**: 터치로 Figure 선택 시 AI 분석 제공
+- **실시간 질의응답**: Figure에 대한 질문과 AI 답변
+
+## 🛠️ 기술 스택
+
+### Frontend
+- **Framework**: Flutter 3.7.2+
+- **Architecture**: MVVM (Model-View-ViewModel)
+- **State Management**: ChangeNotifier, InheritedWidget
+- **Database**: Isar (NoSQL local database)
+
+### 핵심 의존성
+```yaml
+dependencies:
+  flutter: sdk
+  pdfrx: ^1.1.28           # PDF 렌더링
+  isar: ^3.1.0+1           # 로컬 데이터베이스
+  file_picker: ^10.1.9     # 파일 선택
+  http: ^1.4.0             # HTTP 클라이언트
+  shared_preferences: ^2.5.3 # 설정 저장
+  path_provider: ^2.1.5    # 파일 경로 관리
 ```
 
+### AI & OCR 연동
+- **AI 프로바이더**: OpenAI GPT-4, Google Gemini API
+- **OCR 서비스**: 커스텀 OCR API 서버
+- **이미지 처리**: Flutter의 dart:ui 라이브러리
+
+## 🚀 시작하기
+
+### 필수 요구사항
+- Flutter SDK 3.7.2 이상
+- Dart SDK 3.0 이상
+- Android Studio / VS Code
+- iOS 개발 시 Xcode 필요
+
+### 설치 방법
+
+1. **저장소 클론**
+```bash
+git clone https://github.com/CommitBang/Frontend.git
+cd Frontend
+```
+
+2. **의존성 설치**
+```bash
+flutter pub get
+```
+
+3. **코드 생성 (Isar 데이터베이스)**
+```bash
+flutter packages pub run build_runner build
+```
+
+4. **환경 변수 설정**
+프로젝트 루트에 `.env` 파일 생성:
+```env
+OCR_BASE_URL=your_ocr_server_url
+```
+
+5. **앱 실행**
+```bash
+flutter run
+```
+
+## ⚙️ 환경 설정
+
+### OCR 서비스 설정
+OCR 기능을 사용하려면 백엔드 OCR 서버가 필요합니다:
+1. OCR 서버 URL을 `.env` 파일에 설정
+2. 서버는 다음 엔드포인트를 제공해야 합니다: (https://github.com/CommitBang/PDFRecognitionAPI)
+   - `POST /api/v1/analyze`: PDF 분석
+
+### AI 기능 설정
+1. 앱 내 설정에서 AI 프로바이더 구성
+2. 지원되는 프로바이더:
+   - **OpenAI**: API 키 필요 ([platform.openai.com](https://platform.openai.com/api-keys))
+   - **Google Gemini**: API 키 필요 ([console.cloud.google.com](https://console.cloud.google.com))
+
+## 📁 프로젝트 구조
+
+```
 lib/
 ├── core/
 │ ├── constants/
@@ -276,70 +359,69 @@ assets/
 - 문서 이름 변경 및 삭제
 - 읽던 페이지 자동 저장
 
----
-
-## 👥 팀원 구성
-
-| 이름  | 역할                            | 주요 기술 스택                    |
-|-----|-------------------------------|-----------------------------|
-| 박철오 | QA 및 리뷰어, Back-end            | Python, Java, Data Science  |
-| 차현준 | 문서 담당자, Back-end              | Java, Python, Spring Boot   |
-| 이주환 | 문서 담당자, Front-end             | Flutter, Dart, pdfrx        |
-| 이재호 | 프로젝트 매니저, QA 및 리뷰어, Front-end | iOS, SwiftUI, C++, Embedded |
-
-## 📄 프로젝트 계획서
-
-### 1. 프로젝트 개요 및 목적
-
-- **목적**: 전공 서적의 복잡한 PDF 문서에서 핵심 텍스트·Figure를 자동 추출하여  
-  빠르고 효율적인 학습 경험 제공
-
-### 2. 주요 산출물
-
-- 크로스플랫폼 Flutter 앱
-- 반응형 UI/UX 디자인
-- 주석–Figure 매핑 알고리즘 및 팝업 UI
-- 챕터 구조 자동 인식 및 목차 생성 모듈
-- OCR 엔진 통합 및 텍스트 기반 설명 생성 API
-
-### 3. 조직 구조
-
-| 이름  | 역할                            | 기술 스택                       |
-|-----|-------------------------------|-----------------------------|
-| 이재호 | 프로젝트 매니저, QA 및 리뷰어, Front-end | C++, Embedded, SwiftUI, iOS |
-| 박철오 | QA 및 리뷰어, Back-end            | Data Science, Java, Python  |
-| 차현준 | 문서 담당자, Back-end              | Java, Python, Spring Boot   |
-| 이주환 | 문서 담당자, Front-end             | Flutter, Java, Python       |
-
-### 4. 일정 및 WBS 요약
-
-| 단계         | 기간                 | 주요 작업                              |
-|------------|--------------------|------------------------------------|
-| 요구사항 분석    | 2025-04-29 ~ 05-04 | 기능 요구사항 정의 및 문서화                   |
-| 시스템 설계     | 2025-05-05 ~ 05-09 | API 설계, DB 스키마 설계, UI 플로우 차트 작성    |
-| 개발 (백엔드)   | 2025-05-03 ~ 05-09 | OCR 모듈, 챕터 인식, 텍스트 처리 API 개발       |
-| 개발 (프론트엔드) | 2025-05-07 ~ 05-19 | Flutter 앱 초기 구조, PDF 뷰어 & 팝업 UI 구현 |
-| 통합 및 테스트   | 2025-05-20 ~ 05-25 | 단위/통합 테스트, 디바이스 테스트                |
-| 배포 및 문서화   | 2025-05-24 ~ 05-28 | 앱 스토어 패키징, 사용자 매뉴얼 작성              
+---             
 
 ## Branch 전략
 
 ### 브랜치 구조
+=======
+├── core/                    # 앱 전체 공통 요소
+│   ├── constants/          # 상수 정의
+│   └── theme/              # 테마 및 디자인 시스템
+├── features/               # 기능별 모듈
+│   ├── home/              # 홈 화면 및 문서 관리
+│   ├── pdf_viewer/        # PDF 뷰어 및 관련 기능
+│   └── settings/          # 설정 화면
+└── shared/                # 공유 서비스 및 위젯
+    ├── services/          # 비즈니스 로직 서비스
+    │   ├── ai_service/    # AI 프로바이더 관리
+    │   ├── ocr_core/      # OCR 서비스
+    │   ├── pdf_core/      # PDF 데이터 관리
+    │   └── navigation_service/ # 내비게이션 관리
+    └── widgets/           # 재사용 가능한 위젯
 
+### 주요 서비스
+
+- **PDFProvider**: PDF 문서 관리 및 OCR 처리
+- **AIService**: AI 프로바이더 통합 관리
+- **OCRProvider**: OCR 서버와의 통신
+- **NavigationService**: 중앙화된 내비게이션 관리
+
+## 🎯 사용 방법
+
+### 1. PDF 문서 추가
+- 홈 화면에서 "새 문서 추가" 버튼 클릭
+- 기기에서 PDF 파일 선택
+- 자동으로 OCR 처리 시작
+
+### 2. Figure 분석
+- PDF 뷰어에서 Figure 영역 터치
+- "Ask AI" 버튼으로 AI 분석 요청
+- 드래그 가능한 채팅 창에서 질의응답
+
+### 3. 문서 관리
+- 최근 문서에서 빠른 접근
+- 문서 이름 변경 및 삭제
+- 읽던 페이지 자동 저장
+
+## 🧪 테스트
+
+### 단위 테스트 실행
+```bash
+flutter test
+```
+
+### 통합 테스트 실행
+```bash
+flutter test integration_test/
+```
+
+### 브랜치 전략
 - `main`: 프로덕션 브랜치
-- `develop`: 개발 브랜치
-- `feature/*`: 새로운 기능 개발 브랜치 (기능명)
-- `bugfix/*`: 버그 수정 브랜치 (버그명)
-- `hotfix/*`: 프로덕션 환경의 긴급 수정 브랜치 (수정명)
-
-### 작업 흐름
-
-1. `develop` 브랜치에서 새로운 브랜치 생성
-2. 개발/수정 작업 진행
-3. 작업 완료 후 Pull Request 생성
-4. 코드 리뷰 후 `develop` 브랜치로 병합
-5. `develop` 브랜치의 안정성이 확인되면 `main` 브랜치로 병합
-6. 병합 후 브랜치 삭제
+- `develop`: 개발 브랜치  
+- `feature/*`: 새로운 기능 개발
+- `bugfix/*`: 버그 수정
+- `hotfix/*`: 긴급 수정
 
 ### 커밋 메시지 규칙
 
@@ -354,21 +436,17 @@ assets/
 | chore    | 빌드 업무 수정  | chore: 패키지 버전 업데이트     |
 
 #### 커밋 메시지 형식
-
 ```
-
 <타입>: <설명>
 [선택사항: 본문]
-
 ```
 
 ## 🤝 기여 방법
 
 1. **Fork & Clone** 저장소
 2. **브랜치 네이밍**: `feature/*`, `bugfix/*`
-3. **커밋 메시지**: `type(scope): 설명`
+3. **커밋 메시지**: 위의 커밋메시지 규칙 확인
 4. **PR 전 확인**:
-
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - `.github/ISSUE_TEMPLATE/` 템플릿 사용
 
@@ -377,3 +455,5 @@ assets/
 ---
 
 ## 📄 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pdfrx/pdfrx.dart';
 import 'package:snapfig/features/pdf_viewer/models/pdf_data_viewmodel.dart';
 import 'package:snapfig/shared/services/pdf_core/models/models.dart';
 
@@ -8,6 +7,7 @@ class FigureOverlayWidget extends StatelessWidget {
   final PDFDataViewModel viewModel;
   final VoidCallback onClose;
   final void Function(BaseLayout figure)? navigateToFigure;
+  final void Function(BaseLayout figure)? onAskAI;
 
   const FigureOverlayWidget({
     super.key,
@@ -15,6 +15,7 @@ class FigureOverlayWidget extends StatelessWidget {
     required this.viewModel,
     required this.onClose,
     this.navigateToFigure,
+    this.onAskAI,
   });
 
   @override
@@ -120,12 +121,13 @@ class FigureOverlayWidget extends StatelessWidget {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 8),
                         FilledButton.icon(
                           onPressed: () {
-                            navigateToFigure?.call(targetFigure);
+                            onAskAI?.call(targetFigure);
                           },
-                          icon: const Icon(Icons.search, size: 18),
-                          label: const Text('Ask to AI'),
+                          icon: const Icon(Icons.smart_toy, size: 18),
+                          label: const Text('Ask AI'),
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(

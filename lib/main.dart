@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:snapfig/features/home/screens/home_widget.dart';
+import 'package:snapfig/features/settings/ai_settings_screen.dart';
 import 'package:snapfig/shared/services/navigation_service/navigation_service.dart';
 import 'package:snapfig/shared/services/ocr_core/ocr_core.dart';
 import 'package:snapfig/shared/services/pdf_core/pdf_core.dart';
@@ -39,6 +40,9 @@ class SnapfigApp extends StatelessWidget {
         darkTheme: darkTheme,
         navigatorKey: _navigationService.navigatorKey,
         home: const HomeWidget(),
+        routes: {
+          '/ai-settings': (context) => const AISettingsScreen(),
+        },
       ),
     );
   }

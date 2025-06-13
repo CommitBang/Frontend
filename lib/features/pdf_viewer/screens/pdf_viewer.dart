@@ -4,6 +4,8 @@ import 'package:snapfig/features/pdf_viewer/models/pdf_data_viewmodel.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/sidebar/pdf_sidebar.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/figure_overlay_widget.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/popover_wrapper.dart';
+import 'package:snapfig/features/pdf_viewer/widgets/ai_chat_popup.dart';
+import 'package:snapfig/shared/services/ai_service/ai_service.dart';
 
 import '../../../shared/services/pdf_core/pdf_core.dart';
 import '../widgets/pdf_bottom_bar.dart';
@@ -26,6 +28,9 @@ class _PDFViewerState extends State<PDFViewer> {
   @override
   void initState() {
     super.initState();
+
+    // Initialize AI service
+    AIService.instance.loadConfigurations();
 
     // Get PDFProvider from InheritedWidget after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -76,8 +81,49 @@ class _PDFViewerState extends State<PDFViewer> {
                 _dismissCurrentPopover();
                 _navigateToFigure(figure);
               },
+              onAskAI: (figure) {
+                _dismissCurrentPopover();
+                _showAIChatPopup(figure);
+              },
             ),
           ),
+    );
+
+    _currentPopover = overlayEntry;
+    overlay.insert(overlayEntry);
+  }
+
+  void _showAIChatPopup(BaseLayout figure) {
+    // Dismiss any existing popover
+    _dismissCurrentPopover();
+
+    final overlay = Overlay.of(context);
+
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Material(
+        color: Colors.transparent,
+        child: Stack(
+          children: [
+            // Background overlay
+            GestureDetector(
+              onTap: _dismissCurrentPopover,
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: Colors.black.withValues(alpha: 0.5),
+              ),
+            ),
+            // Centered AI chat popup
+            Center(
+              child: AIChatPopup(
+                figure: figure,
+                viewModel: _viewModel!,
+                onClose: _dismissCurrentPopover,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
 
     _currentPopover = overlayEntry;

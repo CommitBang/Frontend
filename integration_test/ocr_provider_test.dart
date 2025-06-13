@@ -28,8 +28,8 @@ void main() {
     final pdfPath = await copyAssetToLocal('integration_test/assets/test.pdf');
     final result = await provider.process(pdfPath);
     expect(result, isA<OCRResult>());
-    expect(result.paragraphData.pages, isNotEmpty);
-    expect(result.interactiveElements, isNotEmpty);
+    expect(result.pages, isNotEmpty);
+    expect(result.figures, isNotEmpty);
   }, timeout: const Timeout(Duration(minutes: 15)));
 
   test('process()에 잘못된 경로를 넣어도 예외가 발생하지 않는다', () async {

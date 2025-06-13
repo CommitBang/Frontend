@@ -3,6 +3,7 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:snapfig/features/home/screens/home_widget.dart';
 import 'package:snapfig/features/settings/ai_settings_screen.dart';
@@ -13,11 +14,10 @@ import 'core/theme/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   final dir = await getApplicationCacheDirectory();
   final pdfProvider = await PDFProviderImpl.load(
-    ocrProvider: OCRProviderImpl(
-      baseUrl: 'https://ce7e-165-194-27-212.ngrok-free.app',
-    ),
+    ocrProvider: OCRProviderImpl(baseUrl: dotenv.env['OCR_BASE_URL']!),
     dbPath: dir.path,
   );
   runApp(SnapfigApp(pdfProvider: pdfProvider));

@@ -46,3 +46,6 @@ app.*.map.json
 
 # Coverage related
 coverage/
+
+# API
+.env

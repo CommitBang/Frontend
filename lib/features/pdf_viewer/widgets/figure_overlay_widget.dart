@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:snapfig/features/pdf_viewer/models/pdf_data_viewmodel.dart';
 import 'package:snapfig/shared/services/pdf_core/models/models.dart';
 
-class FigureOverlayWidget extends StatelessWidget {
+class FigureOverlayWidget extends StatefulWidget {
   final BaseLayout reference;
   final PDFDataViewModel viewModel;
   final VoidCallback onClose;
@@ -19,14 +19,27 @@ class FigureOverlayWidget extends StatelessWidget {
   });
 
   @override
+  State<FigureOverlayWidget> createState() => _FigureOverlayWidgetState();
+}
+
+class _FigureOverlayWidgetState extends State<FigureOverlayWidget> {
+  final TransformationController _transformationController = TransformationController();
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     // Find the actual figure that this reference points to
-    final targetFigure = viewModel.findFigureByReference(reference);
+    final targetFigure = widget.viewModel.findFigureByReference(widget.reference);
     if (targetFigure == null) return _buildNotFoundContent(context);
 
     return FutureBuilder(
-      future: viewModel.getFigureImage(targetFigure),
+      future: widget.viewModel.getFigureImage(targetFigure),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoadingContent(context);
@@ -36,7 +49,7 @@ class FigureOverlayWidget extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Figure image
+                // Figure image with zoom controls
                 Container(
                   padding: const EdgeInsets.all(8),
                   child: LayoutBuilder(
@@ -44,38 +57,34 @@ class FigureOverlayWidget extends StatelessWidget {
                       final image = snapshot.data!;
                       final imageAspectRatio = image.width / image.height;
 
-                      // Calculate optimal display size completely based on image aspect ratio
-                      final availableWidth =
-                          constraints.maxWidth - 16; // Account for padding
-                      final availableHeight =
-                          MediaQuery.of(context).size.height *
-                          0.4; // Max 40% of screen height
+                      // Dynamic sizing based on screen size and content
+                      final screenSize = MediaQuery.of(context).size;
+                      final availableWidth = constraints.maxWidth - 16;
+                      
+                      // Adaptive height based on screen size
+                      final maxHeightRatio = screenSize.height > 800 ? 0.5 : 0.4;
+                      final availableHeight = screenSize.height * maxHeightRatio;
 
                       double displayWidth;
                       double displayHeight;
 
-                      // Calculate size that fits within available space while maintaining aspect ratio
-                      final widthBasedHeight =
-                          availableWidth / imageAspectRatio;
-                      final heightBasedWidth =
-                          availableHeight * imageAspectRatio;
+                      final widthBasedHeight = availableWidth / imageAspectRatio;
+                      final heightBasedWidth = availableHeight * imageAspectRatio;
 
                       if (widthBasedHeight <= availableHeight) {
-                        // Width is the limiting factor
                         displayWidth = availableWidth;
                         displayHeight = widthBasedHeight;
                       } else {
-                        // Height is the limiting factor
                         displayWidth = heightBasedWidth;
                         displayHeight = availableHeight;
                       }
 
-                      // Only apply minimal constraints to prevent unusable sizes
-                      displayWidth = displayWidth.clamp(100.0, availableWidth);
-                      displayHeight = displayHeight.clamp(
-                        40.0,
-                        availableHeight,
-                      );
+                      // Dynamic minimum constraints based on screen size
+                      final minWidth = screenSize.width * 0.2;
+                      final minHeight = screenSize.height * 0.1;
+                      
+                      displayWidth = displayWidth.clamp(minWidth, availableWidth);
+                      displayHeight = displayHeight.clamp(minHeight, availableHeight);
 
                       return Container(
                         width: displayWidth,
@@ -87,12 +96,16 @@ class FigureOverlayWidget extends StatelessWidget {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: RawImage(
-                            image: image,
-                            fit:
-                                BoxFit
-                                    .contain, // Show entire image without cropping
-                            alignment: Alignment.center,
+                          child: InteractiveViewer(
+                            transformationController: _transformationController,
+                            minScale: 0.5,
+                            maxScale: 4.0,
+                            constrained: true,
+                            child: RawImage(
+                              image: image,
+                              fit: BoxFit.contain,
+                              alignment: Alignment.center,
+                            ),
                           ),
                         ),
                       );
@@ -110,7 +123,7 @@ class FigureOverlayWidget extends StatelessWidget {
                       children: [
                         FilledButton.tonalIcon(
                           onPressed: () {
-                            navigateToFigure?.call(targetFigure);
+                            widget.navigateToFigure?.call(targetFigure);
                           },
                           icon: const Icon(Icons.open_in_new, size: 18),
                           label: const Text('Go to Figure'),
@@ -124,7 +137,7 @@ class FigureOverlayWidget extends StatelessWidget {
                         const SizedBox(height: 8),
                         FilledButton.icon(
                           onPressed: () {
-                            onAskAI?.call(targetFigure);
+                            widget.onAskAI?.call(targetFigure);
                           },
                           icon: const Icon(Icons.smart_toy, size: 18),
                           label: const Text('Ask AI'),
@@ -203,7 +216,7 @@ class FigureOverlayWidget extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
-            onPressed: onClose,
+            onPressed: widget.onClose,
             icon: const Icon(Icons.close, size: 16),
             label: const Text('Close'),
             style: OutlinedButton.styleFrom(

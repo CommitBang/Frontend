@@ -303,7 +303,7 @@ class _PDFViewerState extends State<PDFViewer> {
     final page = _viewModel!.pages[pageIndex];
     if (layouts == null) return [];
     final references = layouts.where(
-      (layout) => layout.type == LayoutType.figure,
+      (layout) => layout.type == LayoutType.figureReference,
     );
 
     // 페이지 크기 비율 계산 - OCR 좌표를 뷰어 좌표로 변환

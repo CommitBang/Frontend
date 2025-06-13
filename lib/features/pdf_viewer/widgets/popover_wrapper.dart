@@ -4,12 +4,16 @@ class PopoverWrapper extends StatelessWidget {
   final Offset targetPosition;
   final Widget child;
   final VoidCallback? onDismiss;
+  final double? width;
+  final double? maxHeight;
 
   const PopoverWrapper({
     super.key,
     required this.targetPosition,
     required this.child,
     this.onDismiss,
+    this.width,
+    this.maxHeight,
   });
 
   @override
@@ -17,9 +21,9 @@ class PopoverWrapper extends StatelessWidget {
     final screenSize = MediaQuery.of(context).size;
     final theme = Theme.of(context);
 
-    // Calculate popover position
-    const popoverWidth = 300.0;
-    const popoverMaxHeight = 450.0;
+    // Dynamic popover sizing based on screen size and parameters
+    final popoverWidth = width ?? (screenSize.width > 600 ? 350.0 : screenSize.width * 0.8);
+    final popoverMaxHeight = maxHeight ?? (screenSize.height > 800 ? 500.0 : screenSize.height * 0.6);
     const arrowSize = 10.0;
     const margin = 20.0;
 
@@ -63,7 +67,7 @@ class PopoverWrapper extends StatelessWidget {
                   onTap: () {}, // Prevent tap from bubbling up
                   child: Container(
                     width: popoverWidth,
-                    constraints: const BoxConstraints(
+                    constraints: BoxConstraints(
                       maxHeight: popoverMaxHeight,
                     ),
                     decoration: BoxDecoration(

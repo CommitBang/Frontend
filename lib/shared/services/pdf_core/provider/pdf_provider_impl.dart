@@ -81,7 +81,6 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
   // 처리 결과는 주 스레드에서 처리됩니다.
   Future<void> _processPdfWithOcr(PDFModel pdf) async {
     _logger.severe('process OCR');
-    _logger.severe('process OCR');
     await updatePDF(id: pdf.id, status: PDFStatus.processing);
     final receivePort = ReceivePort();
     await Isolate.spawn(_ocrProcess, [
@@ -288,13 +287,11 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
       });
       final pdfInfo = await _getPDFInfo(filePath);
       pdf.thumbnail = pdfInfo.thumbnail;
-      pdf.thumbnail = pdfInfo.thumbnail;
       await updatePDF(
         id: pdf.id,
         thumbnail: pdfInfo.thumbnail,
         totalPages: pdfInfo.totalPages,
       );
-      _processPdfWithOcr(pdf);
       _processPdfWithOcr(pdf);
     } catch (e) {
       _logger.severe('Failed to add PDF: $e');
@@ -351,11 +348,6 @@ class PDFProviderImpl<OCR extends OCRProvider> extends PDFProvider {
         .sortByUpdatedAt()
         .optional(limit != null, (q) => q.limit(limit!));
     return await query.findAll();
-  }
-
-  @override
-  Future<BasePdf?> getPDF(String path) async {
-    return await _isar.pDFModels.filter().pathEqualTo(path).findFirst();
   }
 
   @override

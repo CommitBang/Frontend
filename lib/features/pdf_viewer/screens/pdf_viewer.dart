@@ -258,7 +258,7 @@ class _PDFViewerState extends State<PDFViewer> {
     final page = _viewModel!.pages[pageIndex];
     if (layouts == null) return [];
     final references = layouts.where(
-      (layout) => layout.type == LayoutType.text,
+      (layout) => layout.type == LayoutType.figureReference,
     );
 
     // 페이지 크기 비율 계산 - OCR 좌표를 뷰어 좌표로 변환
@@ -326,22 +326,7 @@ class _PDFViewerState extends State<PDFViewer> {
           child: Container(
             decoration: BoxDecoration(
               color: theme.colorScheme.primary.withValues(alpha: 0.2),
-              border: Border.all(color: theme.colorScheme.primary, width: 2.0),
-              borderRadius: BorderRadius.circular(4.0),
-            ),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                child: Icon(
-                  Icons.image,
-                  size: 12,
-                  color: theme.colorScheme.onPrimary,
-                ),
-              ),
+              borderRadius: BorderRadius.circular(2.0),
             ),
           ),
         );

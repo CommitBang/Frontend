@@ -18,9 +18,11 @@ OCR 기반 텍스트 추출, PDF 문서 구조 자동 분석, 주석–Figure �
 
 - [주요 기능](#-주요-기능)
 - [기술 스택](#-기술-스택)
-- [설치 및 실행](#-설치-및-실행)
+- [시작하기](#-시작하기)
+- [환경 설정](#-환경-설정)
 - [프로젝트 구조](#프로젝트-구조)
     - [주요 디렉토리 설명](#주요-디렉토리-설명)
+- [사용 방법](#-사용-방법)
 - [팀원 구성](#-팀원-구성)
 - [프로젝트 계획서](#-프로젝트-계획서)
 - [Branch 전략](#branch-전략)
@@ -34,42 +36,112 @@ OCR 기반 텍스트 추출, PDF 문서 구조 자동 분석, 주석–Figure �
 
 ## 🚀 주요 기능
 
-- **OCR 기반 텍스트 추출**  
-  스캔된 PDF에서도 텍스트를 정확히 인식하여 디지털 텍스트로 변환
-- **챕터 자동 인식 & 목차 생성**  
-  문서 구조를 분석해 자동으로 목차를 구성하고 챕터별 이동 지원
-- **주석–Figure 자동 매핑 & 팝업**  
-  본문 주석을 탭하면 관련 Figure 팝업으로 즉시 확인
-- **학습 관리**  
-  즐겨찾기, 하이라이트, 메모 기능으로 중요 내용을 저장·관리
+### 🔍 OCR 기반 텍스트 추출
+
+- **Figure 및 참조 인식**  
+  문서 내 Figure와 관련 참조를 자동으로 연결
+
+### 🤖 AI 기반 Figure 분석
+
+- **다중 AI 프로바이더 지원**  
+  OpenAI GPT-4, Google Gemini 연동
+- **인터랙티브 Figure 분석**  
+  터치로 Figure 선택 시 AI 분석 제공
+- **실시간 질의응답**  
+  Figure에 대한 질문과 AI 답변
 
 ---
 
-## 🛠 기술 스택
+## 🛠️ 기술 스택
 
-- **Flutter & Dart**
-- **PDF 처리**: pdfrx
-- **파일 선택**: file_picker
-- **경로 관리**: path
-- **수학 연산**: vector_math
-- **상태 관리**: Provider 패턴
-- **CI/CD**: GitHub Actions
+### Frontend
+
+- **Framework**: Flutter 3.7.2+
+- **Language**: Dart 3.0+
+- **Architecture**: MVVM (Model-View-ViewModel)
+- **State Management**: ChangeNotifier, InheritedWidget
+- **Database**: Isar (NoSQL local database)
+
+### 핵심 의존성
+
+```yaml
+dependencies:
+  flutter: sdk
+  pdfrx: ^1.1.28
+  isar: ^3.1.0+1
+  file_picker: ^10.1.9
+  http: ^1.4.0
+  shared_preferences: ^2.5.3
+  path_provider: ^2.1.5
+```
 
 ---
 
-## 📱 설치 및 실행
+## 🚀 시작하기
+
+### 필수 요구사항
+
+- Flutter SDK 3.7.2 이상
+- Dart SDK 3.0 이상
+- Android Studio 또는 VS Code
+- iOS 개발 시 Xcode
+
+### 설치 방법
+
+1. **저장소 클론**
 
 ```bash
-# 1. 저장소 클론
 git clone https://github.com/CommitBang/Frontend.git
 cd Frontend
+```
 
-# 2. Flutter 패키지 설치
+2. **의존성 설치**
+
+```bash
 flutter pub get
+```
 
-# 3. 앱 실행
+3. **코드 생성 (Isar 데이터베이스)**
+
+```bash
+flutter packages pub run build_runner build
+```
+
+4. **환경 변수 설정**
+   프로젝트 루트에 `.env` 파일 생성:
+
+```env
+OCR_BASE_URL=your_ocr_server_url
+```
+
+5. **앱 실행**
+
+```bash
 flutter run
 ```
+
+---
+
+## ⚙️ 환경 설정
+
+### OCR 서비스 설정
+
+OCR 기능을 사용하려면 백엔드 OCR 서버가 필요합니다:
+
+1. OCR 서버 URL을 `.env` 파일에 설정
+2. 서버는 다음 엔드포인트를 제공해야 합니다:
+
+- `POST /api/v1/analyze`: PDF 분석
+
+### AI 기능 설정
+
+1. 앱 내 설정에서 AI 프로바이더 구성
+2. 지원되는 프로바이더:
+
+- **OpenAI**: API 키 필요 ([platform.openai.com](https://platform.openai.com/api-keys))
+- **Google Gemini**: API 키 필요 ([console.cloud.google.com](https://console.cloud.google.com))
+
+---
 
 ## 프로젝트 구조
 
@@ -182,6 +254,30 @@ assets/
 |               | fonts/                 | 폰트 파일                  |
 |               | icons/                 | 아이콘 리소스                |
 
+---
+
+## 🎯 사용 방법
+
+### 1. PDF 문서 추가
+
+- 홈 화면에서 "새 문서 추가" 버튼 클릭
+- 기기에서 PDF 파일 선택
+- 자동으로 OCR 처리 시작
+
+### 2. Figure 분석
+
+- PDF 뷰어에서 Figure 영역 터치
+- "Ask AI" 버튼으로 AI 분석 요청
+- 드래그 가능한 채팅 창에서 질의응답
+
+### 3. 문서 관리
+
+- 최근 문서에서 빠른 접근
+- 문서 이름 변경 및 삭제
+- 읽던 페이지 자동 저장
+
+---
+
 ## 👥 팀원 구성
 
 | 이름  | 역할                            | 주요 기술 스택                    |
@@ -276,4 +372,8 @@ assets/
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - `.github/ISSUE_TEMPLATE/` 템플릿 사용
 
-5. **리뷰 프로세스**: 최소 두 명의 리뷰어 승인 후 Merge  
+5. **리뷰 프로세스**: 최소 두 명의 리뷰어 승인 후 Merge
+
+---
+
+## 📄 라이선스

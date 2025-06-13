@@ -5,6 +5,7 @@ import 'package:snapfig/features/pdf_viewer/widgets/sidebar/pdf_sidebar.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/figure_overlay_widget.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/popover_wrapper.dart';
 import 'package:snapfig/features/pdf_viewer/widgets/simple_draggable_ai_chat.dart';
+import 'package:snapfig/features/pdf_viewer/widgets/figure_highlight_widget.dart';
 import 'package:snapfig/shared/services/ai_service/ai_service.dart';
 
 import '../../../shared/services/pdf_core/pdf_core.dart';
@@ -302,8 +303,11 @@ class _PDFViewerState extends State<PDFViewer> {
     final layouts = _viewModel!.layoutsByPage[pageIndex];
     final page = _viewModel!.pages[pageIndex];
     if (layouts == null) return [];
+    // Include both figure references and actual figures
     final references = layouts.where(
-      (layout) => layout.type == LayoutType.figureReference,
+      (layout) =>
+          layout.type == LayoutType.figureReference ||
+          layout.type == LayoutType.figure,
     );
 
     // 페이지 크기 비율 계산 - OCR 좌표를 뷰어 좌표로 변환
@@ -362,26 +366,21 @@ class _PDFViewerState extends State<PDFViewer> {
   Widget _buildHighlightWidget(BuildContext context, BaseLayout reference) {
     return Builder(
       builder: (innerContext) {
-        final theme = Theme.of(innerContext);
-        return GestureDetector(
-          onTapDown: (details) {
-            print('Tapped reference: ${reference.content}');
+        return FigureHighlightWidget(
+          layout: reference,
+          onFigureReferenceTap: () {
             // Get the global position of the tap
             final RenderBox? renderBox =
                 innerContext.findRenderObject() as RenderBox?;
             if (renderBox != null) {
-              final globalPosition = renderBox.localToGlobal(
-                details.localPosition,
-              );
+              final globalPosition = renderBox.localToGlobal(Offset.zero);
               _showFigurePopover(reference, globalPosition);
             }
           },
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(2.0),
-            ),
-          ),
+          onAskAI: () {
+            print('Ask AI for figure: ${reference.content}');
+            _showAIChatPopup(reference);
+          },
         );
       },
     );

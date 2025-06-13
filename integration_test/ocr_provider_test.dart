@@ -20,7 +20,7 @@ void main() {
 
   setUp(() {
     provider = OCRProviderImpl(
-      baseUrl: 'https://901b-39-115-116-188.ngrok-free.app',
+      baseUrl: 'https://b08b-165-194-27-212.ngrok-free.app',
     );
   });
 

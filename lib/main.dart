@@ -15,7 +15,7 @@ void main() async {
   final dir = await getApplicationCacheDirectory();
   final pdfProvider = await PDFProviderImpl.load(
     ocrProvider: OCRProviderImpl(
-      baseUrl: 'https://901b-39-115-116-188.ngrok-free.app',
+      baseUrl: 'https://ce7e-165-194-27-212.ngrok-free.app',
     ),
     dbPath: dir.path,
   );
@@ -31,15 +31,6 @@ class SnapfigApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InheritedPDFProviderWidget(
-      provider: _pdfProvider,
-      child: MaterialApp(
-        title: 'Snapfig',
-        theme: lightTheme,
-        darkTheme: darkTheme,
-        navigatorKey: _navigationService.navigatorKey,
-        home: const HomeWidget(),
-      ),
     return InheritedPDFProviderWidget(
       provider: _pdfProvider,
       child: MaterialApp(

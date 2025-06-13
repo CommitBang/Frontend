@@ -19,7 +19,7 @@ class PopoverWrapper extends StatelessWidget {
 
     // Calculate popover position
     const popoverWidth = 300.0;
-    const popoverMaxHeight = 320.0;
+    const popoverMaxHeight = 450.0;
     const arrowSize = 10.0;
     const margin = 20.0;
 

@@ -142,40 +142,64 @@ class PDFDataViewModel extends ChangeNotifier {
     print('   Scale factors: scaleX=$scaleX, scaleY=$scaleY');
 
     final figureRect = figure.rect;
-    final left = figureRect.left * scaleX;
-    final top = figureRect.top * scaleY;
-    final width = figureRect.width * scaleX;
-    final height = figureRect.height * scaleY;
+
+    // Add padding around the figure to prevent cropping (10% of figure size, minimum 5 pixels)
+    final paddingX = (figureRect.width * 0.1).clamp(5.0, 20.0);
+    final paddingY = (figureRect.height * 0.1).clamp(5.0, 20.0);
+
+    // Apply padding to the original rectangle
+    final paddedLeft = (figureRect.left - paddingX) * scaleX;
+    final paddedTop = (figureRect.top - paddingY) * scaleY;
+    final paddedWidth = (figureRect.width + paddingX * 2) * scaleX;
+    final paddedHeight = (figureRect.height + paddingY * 2) * scaleY;
 
     print('   Original rect: ${figureRect.toString()}');
-    print('   Scaled rect: left=$left, top=$top, width=$width, height=$height');
+    print(
+      '   Padded rect: left=$paddedLeft, top=$paddedTop, width=$paddedWidth, height=$paddedHeight',
+    );
 
     // Validate dimensions
-    if (width <= 0 || height <= 0) {
-      print('❌ Invalid dimensions after scaling');
+    if (paddedWidth <= 0 || paddedHeight <= 0) {
+      print('❌ Invalid dimensions after scaling and padding');
       return null;
     }
 
-    // Clamp coordinates to page bounds to prevent rendering errors
-    final clampedLeft = left.clamp(0.0, pageDoc.width - 1);
-    final clampedTop = top.clamp(0.0, pageDoc.height - 1);
-    final clampedWidth = (width).clamp(1.0, pageDoc.width - clampedLeft);
-    final clampedHeight = (height).clamp(1.0, pageDoc.height - clampedTop);
+    // Improved clamping that preserves as much of the figure as possible
+    final clampedLeft = paddedLeft.clamp(0.0, pageDoc.width.toDouble());
+    final clampedTop = paddedTop.clamp(0.0, pageDoc.height.toDouble());
 
-    if (clampedLeft != left ||
-        clampedTop != top ||
-        clampedWidth != width ||
-        clampedHeight != height) {
+    // Calculate maximum available width/height from clamped position
+    final maxAvailableWidth = pageDoc.width - clampedLeft;
+    final maxAvailableHeight = pageDoc.height - clampedTop;
+
+    // Use the smaller of padded dimensions or available space
+    final clampedWidth = paddedWidth.clamp(1.0, maxAvailableWidth);
+    final clampedHeight = paddedHeight.clamp(1.0, maxAvailableHeight);
+
+    if (clampedLeft != paddedLeft ||
+        clampedTop != paddedTop ||
+        clampedWidth != paddedWidth ||
+        clampedHeight != paddedHeight) {
       print(
-        '⚠️  Clamped coordinates: left=$clampedLeft, top=$clampedTop, width=$clampedWidth, height=$clampedHeight',
+        '⚠️  Adjusted coordinates: left=$clampedLeft, top=$clampedTop, width=$clampedWidth, height=$clampedHeight',
       );
     }
 
+    // Use round() instead of toInt() for better precision
+    final renderX = clampedLeft.round();
+    final renderY = clampedTop.round();
+    final renderWidth = clampedWidth.round();
+    final renderHeight = clampedHeight.round();
+
+    print(
+      '   Final render params: x=$renderX, y=$renderY, width=$renderWidth, height=$renderHeight',
+    );
+
     final image = await pageDoc.render(
-      x: clampedLeft.toInt(),
-      y: clampedTop.toInt(),
-      width: clampedWidth.toInt(),
-      height: clampedHeight.toInt(),
+      x: renderX,
+      y: renderY,
+      width: renderWidth,
+      height: renderHeight,
     );
     if (image == null) {
       print('❌ Failed to render image');

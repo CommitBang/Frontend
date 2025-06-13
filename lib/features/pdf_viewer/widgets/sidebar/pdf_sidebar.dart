@@ -36,6 +36,7 @@ class _PDFSideBarState extends State<PDFSideBar> {
   Widget build(BuildContext context) {
     return Container(
       width: _sidebarWidth,
+      color: Theme.of(context).colorScheme.surfaceVariant,
       child: Column(
         children: [
           SegmentedButton<_PDFSideBarTab>(

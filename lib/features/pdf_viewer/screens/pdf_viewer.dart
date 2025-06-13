@@ -38,6 +38,7 @@ class _PDFViewerState extends State<PDFViewer> {
           _pdfController.useDocument((doc) {
             _viewModel?.loadPDFData(widget.path, doc);
           });
+          setState(() {});
         }
       });
     });

@@ -37,16 +37,48 @@ class FigureOverlayWidget extends StatelessWidget {
               children: [
                 // Figure image
                 Container(
-                  constraints: const BoxConstraints(
-                    maxHeight: 180,
-                    minHeight: 100,
-                  ),
                   padding: const EdgeInsets.all(8),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
+                      final image = snapshot.data!;
+                      final imageAspectRatio = image.width / image.height;
+
+                      // Calculate optimal display size completely based on image aspect ratio
+                      final availableWidth =
+                          constraints.maxWidth - 16; // Account for padding
+                      final availableHeight =
+                          MediaQuery.of(context).size.height *
+                          0.4; // Max 40% of screen height
+
+                      double displayWidth;
+                      double displayHeight;
+
+                      // Calculate size that fits within available space while maintaining aspect ratio
+                      final widthBasedHeight =
+                          availableWidth / imageAspectRatio;
+                      final heightBasedWidth =
+                          availableHeight * imageAspectRatio;
+
+                      if (widthBasedHeight <= availableHeight) {
+                        // Width is the limiting factor
+                        displayWidth = availableWidth;
+                        displayHeight = widthBasedHeight;
+                      } else {
+                        // Height is the limiting factor
+                        displayWidth = heightBasedWidth;
+                        displayHeight = availableHeight;
+                      }
+
+                      // Only apply minimal constraints to prevent unusable sizes
+                      displayWidth = displayWidth.clamp(100.0, availableWidth);
+                      displayHeight = displayHeight.clamp(
+                        40.0,
+                        availableHeight,
+                      );
+
                       return Container(
-                        width: double.infinity,
-                        height: constraints.maxHeight,
+                        width: displayWidth,
+                        height: displayHeight,
                         decoration: BoxDecoration(
                           color: theme.colorScheme.surfaceContainerHighest
                               .withValues(alpha: 0.3),
@@ -55,11 +87,11 @@ class FigureOverlayWidget extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: RawImage(
-                            image: snapshot.data!,
-                            fit: BoxFit.contain,
+                            image: image,
+                            fit:
+                                BoxFit
+                                    .contain, // Show entire image without cropping
                             alignment: Alignment.center,
-                            width: constraints.maxWidth,
-                            height: constraints.maxHeight,
                           ),
                         ),
                       );
@@ -71,18 +103,37 @@ class FigureOverlayWidget extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   child: SizedBox(
                     width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        navigateToFigure?.call(targetFigure);
-                      },
-                      icon: const Icon(Icons.open_in_new, size: 18),
-                      label: const Text('Go to Figure'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        FilledButton.tonalIcon(
+                          onPressed: () {
+                            navigateToFigure?.call(targetFigure);
+                          },
+                          icon: const Icon(Icons.open_in_new, size: 18),
+                          label: const Text('Go to Figure'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
-                      ),
+                        FilledButton.icon(
+                          onPressed: () {
+                            navigateToFigure?.call(targetFigure);
+                          },
+                          icon: const Icon(Icons.search, size: 18),
+                          label: const Text('Ask to AI'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

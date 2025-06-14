@@ -1,1 +1,0 @@
-프로젝트 내 용어 정의 (e.g. “Figure 매핑”, “OCR Overlay” 등)
